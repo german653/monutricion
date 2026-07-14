@@ -122,7 +122,6 @@ export function Navbar() {
       </nav>
 
       <CartSheet open={cartOpen} onOpenChange={setCartOpen} />
-      <AdminLoginModal open={loginOpen} onOpenChange={setLoginOpen} />
     </header>
   );
 }
