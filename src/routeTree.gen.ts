@@ -13,7 +13,9 @@ import { Route as TiendaRouteImport } from './routes/tienda'
 import { Route as SobreMiRouteImport } from './routes/sobre-mi'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as ReservarRouteImport } from './routes/reservar'
+import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReservarConfirmacionRouteImport } from './routes/reservar.confirmacion'
 
 const TiendaRoute = TiendaRouteImport.update({
   id: '/tienda',
@@ -35,45 +37,84 @@ const ReservarRoute = ReservarRouteImport.update({
   path: '/reservar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactoRoute = ContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReservarConfirmacionRoute = ReservarConfirmacionRouteImport.update({
+  id: '/confirmacion',
+  path: '/confirmacion',
+  getParentRoute: () => ReservarRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/reservar': typeof ReservarRoute
+  '/contacto': typeof ContactoRoute
+  '/reservar': typeof ReservarRouteWithChildren
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
   '/tienda': typeof TiendaRoute
+  '/reservar/confirmacion': typeof ReservarConfirmacionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/reservar': typeof ReservarRoute
+  '/contacto': typeof ContactoRoute
+  '/reservar': typeof ReservarRouteWithChildren
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
   '/tienda': typeof TiendaRoute
+  '/reservar/confirmacion': typeof ReservarConfirmacionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/reservar': typeof ReservarRoute
+  '/contacto': typeof ContactoRoute
+  '/reservar': typeof ReservarRouteWithChildren
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
   '/tienda': typeof TiendaRoute
+  '/reservar/confirmacion': typeof ReservarConfirmacionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/reservar' | '/servicios' | '/sobre-mi' | '/tienda'
+  fullPaths:
+    | '/'
+    | '/contacto'
+    | '/reservar'
+    | '/servicios'
+    | '/sobre-mi'
+    | '/tienda'
+    | '/reservar/confirmacion'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/reservar' | '/servicios' | '/sobre-mi' | '/tienda'
-  id: '__root__' | '/' | '/reservar' | '/servicios' | '/sobre-mi' | '/tienda'
+  to:
+    | '/'
+    | '/contacto'
+    | '/reservar'
+    | '/servicios'
+    | '/sobre-mi'
+    | '/tienda'
+    | '/reservar/confirmacion'
+  id:
+    | '__root__'
+    | '/'
+    | '/contacto'
+    | '/reservar'
+    | '/servicios'
+    | '/sobre-mi'
+    | '/tienda'
+    | '/reservar/confirmacion'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ReservarRoute: typeof ReservarRoute
+  ContactoRoute: typeof ContactoRoute
+  ReservarRoute: typeof ReservarRouteWithChildren
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
   TiendaRoute: typeof TiendaRoute
@@ -109,6 +150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReservarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contacto': {
+      id: '/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof ContactoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -116,12 +164,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reservar/confirmacion': {
+      id: '/reservar/confirmacion'
+      path: '/confirmacion'
+      fullPath: '/reservar/confirmacion'
+      preLoaderRoute: typeof ReservarConfirmacionRouteImport
+      parentRoute: typeof ReservarRoute
+    }
   }
 }
 
+interface ReservarRouteChildren {
+  ReservarConfirmacionRoute: typeof ReservarConfirmacionRoute
+}
+
+const ReservarRouteChildren: ReservarRouteChildren = {
+  ReservarConfirmacionRoute: ReservarConfirmacionRoute,
+}
+
+const ReservarRouteWithChildren = ReservarRoute._addFileChildren(
+  ReservarRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ReservarRoute: ReservarRoute,
+  ContactoRoute: ContactoRoute,
+  ReservarRoute: ReservarRouteWithChildren,
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
   TiendaRoute: TiendaRoute,
