@@ -191,14 +191,9 @@ export async function deleteAvailabilitySlot(id: string) {
   if (error) throw error;
 }
 
-/** Booked (non-cancelled) date+time pairs, used to hide taken slots. */
-export async function fetchBookedSlots(): Promise<{ date: string; time: string }[]> {
-  const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await db
-    .from("appointments")
-    .select("date, time, status")
-    .gte("date", today)
-    .neq("status", "cancelado");
+/** Free slots for the public booking page (only Melina's slots not yet taken). */
+export async function fetchAvailableSlots(): Promise<{ date: string; time: string }[]> {
+  const { data, error } = await (supabase as any).rpc("available_slots");
   if (error) throw error;
   return (data ?? []).map((r: any) => ({ date: r.date, time: r.time }));
 }
