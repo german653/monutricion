@@ -266,6 +266,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      available_slots: {
+        Args: never
+        Returns: {
+          date: string
+          time: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
