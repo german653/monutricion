@@ -13,7 +13,6 @@ import {
 import { useCart } from "@/features/cart/cart-store";
 import { useAdmin } from "@/hooks/use-admin";
 import { CartSheet } from "@/components/CartSheet";
-import { AdminLoginModal } from "@/components/AdminLoginModal";
 
 const links = [
   { to: "/", label: "Inicio" },
