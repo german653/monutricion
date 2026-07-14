@@ -70,6 +70,27 @@ export type Database = {
           },
         ]
       }
+      availability: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          time: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          time: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          time?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
