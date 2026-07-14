@@ -9,38 +9,174 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TiendaRouteImport } from './routes/tienda'
+import { Route as SobreMiRouteImport } from './routes/sobre-mi'
+import { Route as ServiciosRouteImport } from './routes/servicios'
+import { Route as ReservarRouteImport } from './routes/reservar'
+import { Route as ContactoRouteImport } from './routes/contacto'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReservarConfirmacionRouteImport } from './routes/reservar.confirmacion'
 
+const TiendaRoute = TiendaRouteImport.update({
+  id: '/tienda',
+  path: '/tienda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SobreMiRoute = SobreMiRouteImport.update({
+  id: '/sobre-mi',
+  path: '/sobre-mi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServiciosRoute = ServiciosRouteImport.update({
+  id: '/servicios',
+  path: '/servicios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservarRoute = ReservarRouteImport.update({
+  id: '/reservar',
+  path: '/reservar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactoRoute = ContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReservarConfirmacionRoute = ReservarConfirmacionRouteImport.update({
+  id: '/confirmacion',
+  path: '/confirmacion',
+  getParentRoute: () => ReservarRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/contacto': typeof ContactoRoute
+  '/reservar': typeof ReservarRouteWithChildren
+  '/servicios': typeof ServiciosRoute
+  '/sobre-mi': typeof SobreMiRoute
+  '/tienda': typeof TiendaRoute
+  '/reservar/confirmacion': typeof ReservarConfirmacionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/contacto': typeof ContactoRoute
+  '/reservar': typeof ReservarRouteWithChildren
+  '/servicios': typeof ServiciosRoute
+  '/sobre-mi': typeof SobreMiRoute
+  '/tienda': typeof TiendaRoute
+  '/reservar/confirmacion': typeof ReservarConfirmacionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/contacto': typeof ContactoRoute
+  '/reservar': typeof ReservarRouteWithChildren
+  '/servicios': typeof ServiciosRoute
+  '/sobre-mi': typeof SobreMiRoute
+  '/tienda': typeof TiendaRoute
+  '/reservar/confirmacion': typeof ReservarConfirmacionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/contacto'
+    | '/reservar'
+    | '/servicios'
+    | '/sobre-mi'
+    | '/tienda'
+    | '/reservar/confirmacion'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/contacto'
+    | '/reservar'
+    | '/servicios'
+    | '/sobre-mi'
+    | '/tienda'
+    | '/reservar/confirmacion'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/contacto'
+    | '/reservar'
+    | '/servicios'
+    | '/sobre-mi'
+    | '/tienda'
+    | '/reservar/confirmacion'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  ContactoRoute: typeof ContactoRoute
+  ReservarRoute: typeof ReservarRouteWithChildren
+  ServiciosRoute: typeof ServiciosRoute
+  SobreMiRoute: typeof SobreMiRoute
+  TiendaRoute: typeof TiendaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tienda': {
+      id: '/tienda'
+      path: '/tienda'
+      fullPath: '/tienda'
+      preLoaderRoute: typeof TiendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sobre-mi': {
+      id: '/sobre-mi'
+      path: '/sobre-mi'
+      fullPath: '/sobre-mi'
+      preLoaderRoute: typeof SobreMiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/servicios': {
+      id: '/servicios'
+      path: '/servicios'
+      fullPath: '/servicios'
+      preLoaderRoute: typeof ServiciosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservar': {
+      id: '/reservar'
+      path: '/reservar'
+      fullPath: '/reservar'
+      preLoaderRoute: typeof ReservarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contacto': {
+      id: '/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof ContactoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +184,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reservar/confirmacion': {
+      id: '/reservar/confirmacion'
+      path: '/confirmacion'
+      fullPath: '/reservar/confirmacion'
+      preLoaderRoute: typeof ReservarConfirmacionRouteImport
+      parentRoute: typeof ReservarRoute
+    }
   }
 }
 
+interface ReservarRouteChildren {
+  ReservarConfirmacionRoute: typeof ReservarConfirmacionRoute
+}
+
+const ReservarRouteChildren: ReservarRouteChildren = {
+  ReservarConfirmacionRoute: ReservarConfirmacionRoute,
+}
+
+const ReservarRouteWithChildren = ReservarRoute._addFileChildren(
+  ReservarRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  ContactoRoute: ContactoRoute,
+  ReservarRoute: ReservarRouteWithChildren,
+  ServiciosRoute: ServiciosRoute,
+  SobreMiRoute: SobreMiRoute,
+  TiendaRoute: TiendaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
