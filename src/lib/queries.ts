@@ -156,3 +156,44 @@ export async function saveContent(key: string, value: unknown) {
     .upsert({ key, value }, { onConflict: "key" });
   if (error) throw error;
 }
+
+/* ----------------------------- Availability ----------------------------- */
+
+export interface AvailabilitySlot {
+  id: string;
+  date: string;
+  time: string;
+  created_at: string;
+}
+
+export async function fetchAvailability(): Promise<AvailabilitySlot[]> {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await db
+    .from("availability")
+    .select("*")
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .order("time", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as AvailabilitySlot[];
+}
+
+export async function addAvailabilitySlots(date: string, times: string[]) {
+  const rows = times.map((time) => ({ date, time }));
+  const { error } = await db
+    .from("availability")
+    .upsert(rows, { onConflict: "date,time", ignoreDuplicates: true });
+  if (error) throw error;
+}
+
+export async function deleteAvailabilitySlot(id: string) {
+  const { error } = await db.from("availability").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/** Free slots for the public booking page (only Melina's slots not yet taken). */
+export async function fetchAvailableSlots(): Promise<{ date: string; time: string }[]> {
+  const { data, error } = await (supabase as any).rpc("available_slots");
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({ date: r.date, time: r.time }));
+}
