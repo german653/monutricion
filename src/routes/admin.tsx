@@ -9,12 +9,18 @@ import {
   LogOut,
   Loader2,
   Trash2,
+  MessageCircle,
+  CalendarClock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/use-admin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
+import { ServiceManager } from "@/components/admin/ServiceManager";
+import { ProductManager } from "@/components/admin/ProductManager";
+import { AvailabilityManager } from "@/components/admin/AvailabilityManager";
 import {
   fetchAppointments,
   fetchAllProducts,
@@ -22,7 +28,6 @@ import {
   updateAppointmentStatus,
   deleteAppointment,
 } from "@/lib/queries";
-import { formatPrice } from "@/lib/format";
 import type { AppointmentStatus } from "@/types";
 
 export const Route = createFileRoute("/admin")({
@@ -103,6 +108,8 @@ function AdminPage() {
     cancelado: "pendiente",
   };
 
+  const waLink = (phone: string) => `https://wa.me/${phone.replace(/[^\d]/g, "")}`;
+
   return (
     <div className="min-h-dvh bg-surface">
       <header className="border-b border-border bg-background">
@@ -127,78 +134,77 @@ function AdminPage() {
           ))}
         </div>
 
-        <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-          <h2 className="mb-4 font-display text-xl">Reservas</h2>
-          {appointments.length === 0 ? (
-            <p className="py-10 text-center text-muted-foreground">Todavía no hay reservas.</p>
-          ) : (
-            <div className="space-y-3">
-              {appointments.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-border p-4 md:flex-row md:items-center md:justify-between"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {a.first_name} {a.last_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {a.service_name ?? "Servicio"} · {a.date} {a.time}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {a.email} · {a.phone}
-                    </p>
-                    {a.notes && <p className="mt-1 text-sm italic text-muted-foreground">“{a.notes}”</p>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => changeStatus(a.id, nextStatus[a.status])} disabled={busy === a.id}>
-                      <Badge className={`cursor-pointer capitalize ${statusStyles[a.status]}`}>{a.status}</Badge>
-                    </button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full text-muted-foreground hover:text-destructive"
-                      onClick={() => removeAppointment(a.id)}
-                      disabled={busy === a.id}
-                      aria-label="Eliminar reserva"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        <Tabs defaultValue="reservas" className="w-full">
+          <TabsList className="mb-6 flex h-auto flex-wrap justify-start gap-1 rounded-2xl bg-card p-1">
+            <TabsTrigger value="reservas" className="rounded-xl"><CalendarCheck className="mr-1.5 h-4 w-4" /> Reservas</TabsTrigger>
+            <TabsTrigger value="horarios" className="rounded-xl"><CalendarClock className="mr-1.5 h-4 w-4" /> Horarios</TabsTrigger>
+            <TabsTrigger value="servicios" className="rounded-xl"><Salad className="mr-1.5 h-4 w-4" /> Servicios</TabsTrigger>
+            <TabsTrigger value="productos" className="rounded-xl"><Package className="mr-1.5 h-4 w-4" /> Productos</TabsTrigger>
+          </TabsList>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-            <h2 className="mb-4 font-display text-xl">Servicios</h2>
-            <div className="space-y-2">
-              {services.map((s) => (
-                <div key={s.id} className="flex items-center justify-between rounded-2xl border border-border px-4 py-3">
-                  <span className="text-sm font-medium">{s.title}</span>
-                  <span className="text-sm text-primary">{formatPrice(s.price)}</span>
+          <TabsContent value="reservas">
+            <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+              <h2 className="mb-4 font-display text-xl">Reservas</h2>
+              {appointments.length === 0 ? (
+                <p className="py-10 text-center text-muted-foreground">Todavía no hay reservas.</p>
+              ) : (
+                <div className="space-y-3">
+                  {appointments.map((a) => (
+                    <div
+                      key={a.id}
+                      className="flex flex-col gap-3 rounded-2xl border border-border p-4 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {a.first_name} {a.last_name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {a.service_name ?? "Servicio"} · {a.date} {a.time}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {a.email} · {a.phone}
+                        </p>
+                        {a.notes && <p className="mt-1 text-sm italic text-muted-foreground">“{a.notes}”</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a href={waLink(a.phone)} target="_blank" rel="noopener noreferrer">
+                          <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-success" aria-label="Contactar por WhatsApp">
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                        </a>
+                        <button onClick={() => changeStatus(a.id, nextStatus[a.status])} disabled={busy === a.id}>
+                          <Badge className={`cursor-pointer capitalize ${statusStyles[a.status]}`}>{a.status}</Badge>
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-full text-muted-foreground hover:text-destructive"
+                          onClick={() => removeAppointment(a.id)}
+                          disabled={busy === a.id}
+                          aria-label="Eliminar reserva"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-            <h2 className="mb-4 font-display text-xl">Productos</h2>
-            {products.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">Aún no cargaste productos.</p>
-            ) : (
-              <div className="space-y-2">
-                {products.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between rounded-2xl border border-border px-4 py-3">
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-sm text-muted-foreground">Stock: {p.stock}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
+              )}
+            </section>
+          </TabsContent>
+
+          <TabsContent value="horarios">
+            <AvailabilityManager />
+          </TabsContent>
+
+          <TabsContent value="servicios">
+            <ServiceManager />
+          </TabsContent>
+
+          <TabsContent value="productos">
+            <ProductManager />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
