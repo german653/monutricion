@@ -1,4 +1,4 @@
-import { motion, type Varibles } from "framer-motion";
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 interface RevealProps {
@@ -21,5 +21,3 @@ export function Reveal({ children, delay = 0, y = 24, className }: RevealProps) 
     </motion.div>
   );
 }
-
-export type { Varibles };
