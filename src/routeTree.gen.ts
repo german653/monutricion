@@ -9,10 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TiendaRouteImport } from './routes/tienda'
 import { Route as SobreMiRouteImport } from './routes/sobre-mi'
 import { Route as ServiciosRouteImport } from './routes/servicios'
+import { Route as ReservarRouteImport } from './routes/reservar'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TiendaRoute = TiendaRouteImport.update({
+  id: '/tienda',
+  path: '/tienda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SobreMiRoute = SobreMiRouteImport.update({
   id: '/sobre-mi',
   path: '/sobre-mi',
@@ -23,6 +30,11 @@ const ServiciosRoute = ServiciosRouteImport.update({
   path: '/servicios',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReservarRoute = ReservarRouteImport.update({
+  id: '/reservar',
+  path: '/reservar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,36 +43,51 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/reservar': typeof ReservarRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/tienda': typeof TiendaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/reservar': typeof ReservarRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/tienda': typeof TiendaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/reservar': typeof ReservarRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/tienda': typeof TiendaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/servicios' | '/sobre-mi'
+  fullPaths: '/' | '/reservar' | '/servicios' | '/sobre-mi' | '/tienda'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/servicios' | '/sobre-mi'
-  id: '__root__' | '/' | '/servicios' | '/sobre-mi'
+  to: '/' | '/reservar' | '/servicios' | '/sobre-mi' | '/tienda'
+  id: '__root__' | '/' | '/reservar' | '/servicios' | '/sobre-mi' | '/tienda'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ReservarRoute: typeof ReservarRoute
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
+  TiendaRoute: typeof TiendaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tienda': {
+      id: '/tienda'
+      path: '/tienda'
+      fullPath: '/tienda'
+      preLoaderRoute: typeof TiendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sobre-mi': {
       id: '/sobre-mi'
       path: '/sobre-mi'
@@ -75,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServiciosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reservar': {
+      id: '/reservar'
+      path: '/reservar'
+      fullPath: '/reservar'
+      preLoaderRoute: typeof ReservarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -87,8 +121,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ReservarRoute: ReservarRoute,
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
+  TiendaRoute: TiendaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
