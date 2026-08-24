@@ -183,6 +183,54 @@ export type Database = {
           },
         ]
       }
+      recipes: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          ingredients: string
+          is_published: boolean
+          prep_time: string | null
+          servings: string | null
+          sort_order: number
+          steps: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          ingredients?: string
+          is_published?: boolean
+          prep_time?: string | null
+          servings?: string | null
+          sort_order?: number
+          steps?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          ingredients?: string
+          is_published?: boolean
+          prep_time?: string | null
+          servings?: string | null
+          sort_order?: number
+          steps?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           created_at: string
