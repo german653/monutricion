@@ -8,6 +8,7 @@ import type {
   Faq,
   HeroContent,
   Product,
+  Recipe,
   Service,
 } from "@/types";
 
@@ -154,6 +155,41 @@ export async function saveContent(key: string, value: unknown) {
   const { error } = await db
     .from("site_content")
     .upsert({ key, value }, { onConflict: "key" });
+  if (error) throw error;
+}
+
+/* -------------------------------- Recipes ------------------------------- */
+
+export async function fetchRecipes(): Promise<Recipe[]> {
+  const { data, error } = await db
+    .from("recipes")
+    .select("*")
+    .eq("is_published", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Recipe[];
+}
+
+export async function fetchAllRecipes(): Promise<Recipe[]> {
+  const { data, error } = await db
+    .from("recipes")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Recipe[];
+}
+
+export async function upsertRecipe(input: Partial<Recipe>) {
+  const { error } = input.id
+    ? await db.from("recipes").update(input).eq("id", input.id)
+    : await db.from("recipes").insert(input);
+  if (error) throw error;
+}
+
+export async function deleteRecipe(id: string) {
+  const { error } = await db.from("recipes").delete().eq("id", id);
   if (error) throw error;
 }
 
