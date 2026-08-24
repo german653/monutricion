@@ -51,6 +51,22 @@ export interface Appointment {
   updated_at: string;
 }
 
+export interface Recipe {
+  id: UUID;
+  title: string;
+  description: string;
+  image_url: string | null;
+  category: string | null;
+  prep_time: string | null;
+  servings: string | null;
+  ingredients: string;
+  steps: string;
+  sort_order: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Faq {
   id: UUID;
   question: string;

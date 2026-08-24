@@ -17,6 +17,7 @@ import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReservarConfirmacionRouteImport } from './routes/reservar.confirmacion'
+import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media/$'
 
 const TiendaRoute = TiendaRouteImport.update({
   id: '/tienda',
@@ -58,6 +59,11 @@ const ReservarConfirmacionRoute = ReservarConfirmacionRouteImport.update({
   path: '/confirmacion',
   getParentRoute: () => ReservarRoute,
 } as any)
+const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
+  id: '/api/public/media/$',
+  path: '/api/public/media/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/sobre-mi': typeof SobreMiRoute
   '/tienda': typeof TiendaRoute
   '/reservar/confirmacion': typeof ReservarConfirmacionRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/sobre-mi': typeof SobreMiRoute
   '/tienda': typeof TiendaRoute
   '/reservar/confirmacion': typeof ReservarConfirmacionRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/sobre-mi': typeof SobreMiRoute
   '/tienda': typeof TiendaRoute
   '/reservar/confirmacion': typeof ReservarConfirmacionRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/sobre-mi'
     | '/tienda'
     | '/reservar/confirmacion'
+    | '/api/public/media/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/sobre-mi'
     | '/tienda'
     | '/reservar/confirmacion'
+    | '/api/public/media/$'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/sobre-mi'
     | '/tienda'
     | '/reservar/confirmacion'
+    | '/api/public/media/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
   TiendaRoute: typeof TiendaRoute
+  ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReservarConfirmacionRouteImport
       parentRoute: typeof ReservarRoute
     }
+    '/api/public/media/$': {
+      id: '/api/public/media/$'
+      path: '/api/public/media/$'
+      fullPath: '/api/public/media/$'
+      preLoaderRoute: typeof ApiPublicMediaSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -214,6 +234,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
   TiendaRoute: TiendaRoute,
+  ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
