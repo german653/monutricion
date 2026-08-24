@@ -13,6 +13,7 @@ import { Route as TiendaRouteImport } from './routes/tienda'
 import { Route as SobreMiRouteImport } from './routes/sobre-mi'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as ReservarRouteImport } from './routes/reservar'
+import { Route as RecetasRouteImport } from './routes/recetas'
 import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,6 +38,11 @@ const ServiciosRoute = ServiciosRouteImport.update({
 const ReservarRoute = ReservarRouteImport.update({
   id: '/reservar',
   path: '/reservar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecetasRoute = RecetasRouteImport.update({
+  id: '/recetas',
+  path: '/recetas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactoRoute = ContactoRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contacto': typeof ContactoRoute
+  '/recetas': typeof RecetasRoute
   '/reservar': typeof ReservarRouteWithChildren
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contacto': typeof ContactoRoute
+  '/recetas': typeof RecetasRoute
   '/reservar': typeof ReservarRouteWithChildren
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/contacto': typeof ContactoRoute
+  '/recetas': typeof RecetasRoute
   '/reservar': typeof ReservarRouteWithChildren
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contacto'
+    | '/recetas'
     | '/reservar'
     | '/servicios'
     | '/sobre-mi'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contacto'
+    | '/recetas'
     | '/reservar'
     | '/servicios'
     | '/sobre-mi'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/contacto'
+    | '/recetas'
     | '/reservar'
     | '/servicios'
     | '/sobre-mi'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ContactoRoute: typeof ContactoRoute
+  RecetasRoute: typeof RecetasRoute
   ReservarRoute: typeof ReservarRouteWithChildren
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/reservar'
       fullPath: '/reservar'
       preLoaderRoute: typeof ReservarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recetas': {
+      id: '/recetas'
+      path: '/recetas'
+      fullPath: '/recetas'
+      preLoaderRoute: typeof RecetasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contacto': {
@@ -230,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ContactoRoute: ContactoRoute,
+  RecetasRoute: RecetasRoute,
   ReservarRoute: ReservarRouteWithChildren,
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
