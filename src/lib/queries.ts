@@ -220,6 +220,7 @@ Porque no se trata de buscar la perfección, sino de aprender, avanzar y crecer 
 
 const DEFAULT_BRANDING: BrandingContent = {
   logo_url: null,
+  favicon_url: null,
   brand_name: "Melina Oviedo",
   tagline: "Nutrición y Salud",
 };
@@ -230,12 +231,16 @@ const DEFAULT_HERO: HeroContent = {
     "Acompañamiento profesional, planes personalizados y herramientas prácticas para construir hábitos sostenibles.",
 };
 
+export const DEFAULT_FOOTER_WHATSAPP_MESSAGE =
+  "¡Holaa Melina! Vi tu sitio web y te quiero hacerte una consulta. Espero tu mensaje";
+
 const DEFAULT_CONTACT: ContactContent = {
   email: "nutricion.melinaoviedo@gmail.com",
-  phone: "+54 9 351 000-0000",
-  whatsapp: "5493510000000",
-  instagram: "@nutri.melinaoviedo",
-  address: "Córdoba Capital, Argentina (Presencial & Online)",
+  phone: "+54 9 3541 63-9512",
+  whatsapp: "5493541639512",
+  instagram: "https://www.instagram.com/nutri_melioviedo/?hl=es-la",
+  address: "Córdoba, Argentina (Presencial & Online)",
+  footer_whatsapp_message: DEFAULT_FOOTER_WHATSAPP_MESSAGE,
 };
 
 function getStorage<T>(key: string, fallback: T): T {

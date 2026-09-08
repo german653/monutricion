@@ -1,14 +1,22 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { fetchHero, fetchAbout, fetchBranding, saveContent } from "@/lib/queries";
-import type { HeroContent, AboutContent, BrandingContent } from "@/types";
+import {
+  fetchHero,
+  fetchAbout,
+  fetchBranding,
+  fetchContact,
+  saveContent,
+  DEFAULT_FOOTER_WHATSAPP_MESSAGE,
+} from "@/lib/queries";
+import { buildWhatsappUrl } from "@/lib/format";
+import type { HeroContent, AboutContent, BrandingContent, ContactContent } from "@/types";
 import logoFallback from "@/assets/logo-mo.png.asset.json";
 
 const DEFAULT_ABOUT_BODY = `Soy Licenciada en Nutrición, egresada de la Facultad de Nutrición de la Universidad Nacional de Córdoba, matrícula profesional 5433.
@@ -40,9 +48,14 @@ export function ContentManager() {
     queryKey: ["about"],
     queryFn: fetchAbout,
   });
+  const { data: contactData, isLoading: loadingContact } = useQuery({
+    queryKey: ["contact"],
+    queryFn: fetchContact,
+  });
 
   const [brandingDraft, setBrandingDraft] = useState<BrandingContent>({
     logo_url: "",
+    favicon_url: "",
     brand_name: "Melina Oviedo",
     tagline: "Nutrición y Salud",
   });
@@ -61,14 +74,25 @@ export function ContentManager() {
     image_url: "",
   });
 
+  const [contactDraft, setContactDraft] = useState<ContactContent>({
+    email: "nutricion.melinaoviedo@gmail.com",
+    phone: "+54 9 3541 63-9512",
+    whatsapp: "5493541639512",
+    instagram: "https://www.instagram.com/nutri_melioviedo/?hl=es-la",
+    address: "Córdoba, Argentina (Presencial & Online)",
+    footer_whatsapp_message: DEFAULT_FOOTER_WHATSAPP_MESSAGE,
+  });
+
   const [savingBranding, setSavingBranding] = useState(false);
   const [savingHero, setSavingHero] = useState(false);
   const [savingAbout, setSavingAbout] = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
 
   useEffect(() => {
     if (brandingData) {
       setBrandingDraft({
         logo_url: brandingData.logo_url ?? "",
+        favicon_url: brandingData.favicon_url ?? "",
         brand_name: brandingData.brand_name ?? "Melina Oviedo",
         tagline: brandingData.tagline ?? "Nutrición y Salud",
       });
@@ -97,6 +121,20 @@ export function ContentManager() {
       });
     }
   }, [aboutData]);
+
+  useEffect(() => {
+    if (contactData) {
+      setContactDraft({
+        email: contactData.email ?? "nutricion.melinaoviedo@gmail.com",
+        phone: contactData.phone ?? "+54 9 3541 63-9512",
+        whatsapp: contactData.whatsapp ?? "5493541639512",
+        instagram: contactData.instagram ?? "https://www.instagram.com/nutri_melioviedo/?hl=es-la",
+        address: contactData.address ?? "Córdoba, Argentina (Presencial & Online)",
+        footer_whatsapp_message:
+          contactData.footer_whatsapp_message ?? DEFAULT_FOOTER_WHATSAPP_MESSAGE,
+      });
+    }
+  }, [contactData]);
 
   const saveBranding = async () => {
     setSavingBranding(true);
@@ -137,7 +175,20 @@ export function ContentManager() {
     }
   };
 
-  if (loadingBranding || loadingHero || loadingAbout) {
+  const saveFooterWhatsapp = async () => {
+    setSavingContact(true);
+    try {
+      await saveContent("contact", contactDraft);
+      await queryClient.invalidateQueries({ queryKey: ["contact"] });
+      toast.success("Mensaje de WhatsApp del footer actualizado");
+    } catch {
+      toast.error("No se pudo guardar el mensaje de WhatsApp");
+    } finally {
+      setSavingContact(false);
+    }
+  };
+
+  if (loadingBranding || loadingHero || loadingAbout || loadingContact) {
     return (
       <div className="flex justify-center p-12">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -217,6 +268,191 @@ export function ContentManager() {
               Este logo se refleja automáticamente en la cabecera (Navbar), el menú móvil y el pie
               de página.
             </p>
+          </div>
+        </div>
+
+        {/* Favicon / Icono de la Pestaña */}
+        <div className="border-t border-border/60 pt-5 mt-4">
+          <div className="mb-4">
+            <h3 className="font-display text-base font-semibold">
+              Favicon (Icono de la pestaña del navegador)
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Personalizá el icono miniatura que verán tus pacientes y visitantes en la pestaña de
+              su navegador o marcadores.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-start">
+            <div className="lg:col-span-1">
+              <ImageUpload
+                value={brandingDraft.favicon_url ?? ""}
+                onChange={(url) => setBrandingDraft({ ...brandingDraft, favicon_url: url || "" })}
+                folder="branding"
+                label="Archivo del Favicon (PNG, SVG, ICO o JPG)"
+              />
+            </div>
+
+            <div className="rounded-2xl border border-border bg-surface p-4 space-y-3 lg:col-span-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Simulación de la pestaña en el navegador
+              </Label>
+              <div className="rounded-xl border border-border/80 bg-muted/40 p-3">
+                <div className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-background border border-border shadow-xs max-w-sm">
+                  <img
+                    src={brandingDraft.favicon_url || "/favicon.svg"}
+                    alt="Favicon preview"
+                    className="h-4 w-4 rounded-sm object-contain"
+                  />
+                  <span className="text-xs font-medium truncate text-foreground">
+                    {brandingDraft.brand_name || "Melina Oviedo"} —{" "}
+                    {brandingDraft.tagline || "Nutrición y Salud"}
+                  </span>
+                  <span className="text-muted-foreground text-xs ml-auto">✕</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Si no subís uno personalizado, la web utiliza automáticamente el icono botánico
+                verde oliva oficial de MO Nutrición.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* WhatsApp del Pie de Página (Footer) */}
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-soft space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <MessageCircle className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-display text-xl font-semibold">Mensaje de WhatsApp del Footer</h2>
+              <p className="text-sm text-muted-foreground">
+                Configurá el texto predeterminado que se enviará al pulsar el botón de WhatsApp
+                ubicado únicamente en el pie de página.
+              </p>
+            </div>
+          </div>
+          <Button
+            className="rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
+            onClick={saveFooterWhatsapp}
+            disabled={savingContact}
+          >
+            {savingContact && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar Mensaje del
+            Footer
+          </Button>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2 items-start">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="footer-wa-msg" className="font-medium">
+                  Mensaje predeterminado de WhatsApp
+                </Label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContactDraft((prev) => ({
+                      ...prev,
+                      footer_whatsapp_message: DEFAULT_FOOTER_WHATSAPP_MESSAGE,
+                    }))
+                  }
+                  className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                >
+                  <Sparkles className="h-3 w-3" /> Restaurar original
+                </button>
+              </div>
+              <Textarea
+                id="footer-wa-msg"
+                rows={4}
+                value={contactDraft.footer_whatsapp_message ?? ""}
+                onChange={(e) =>
+                  setContactDraft((prev) => ({
+                    ...prev,
+                    footer_whatsapp_message: e.target.value,
+                  }))
+                }
+                placeholder="¡Holaa Melina! Vi tu sitio web y te quiero hacerte una consulta. Espero tu mensaje"
+                className="text-sm leading-relaxed"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tu cliente verá este texto ya escrito al presionar el botón de WhatsApp del footer.
+                Podés usar emojis y saltos de línea.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="wa-phone">Número de WhatsApp (con código de país sin +)</Label>
+              <Input
+                id="wa-phone"
+                value={contactDraft.whatsapp ?? ""}
+                onChange={(e) =>
+                  setContactDraft((prev) => ({
+                    ...prev,
+                    whatsapp: e.target.value,
+                  }))
+                }
+                placeholder="5493541639512"
+              />
+              <p className="text-xs text-muted-foreground">
+                Ejemplo: 5493541639512 (54 = Argentina, 9 = Móvil, 3541... = Número).
+              </p>
+            </div>
+          </div>
+
+          {/* Vista previa en vivo */}
+          <div className="rounded-2xl border border-border bg-surface p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Vista previa del mensaje
+              </Label>
+              <span className="text-[0.7rem] rounded-full bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-600 dark:text-emerald-400">
+                Botón del Footer
+              </span>
+            </div>
+
+            <div className="rounded-2xl bg-emerald-500/5 p-4 border border-emerald-500/20 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs">
+                  <MessageCircle className="h-4 w-4" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                      Mensaje recibido en tu WhatsApp
+                    </span>
+                    <span className="text-[0.65rem] text-muted-foreground">Ahora</span>
+                  </div>
+                  <div className="rounded-xl rounded-tl-none bg-background p-3 text-sm text-foreground shadow-xs border border-border/60 whitespace-pre-wrap break-words">
+                    {contactDraft.footer_whatsapp_message?.trim() || (
+                      <span className="italic text-muted-foreground">
+                        (Sin texto predeterminado)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <p className="text-xs text-muted-foreground">
+                Aplica únicamente al botón de WhatsApp del pie de página.
+              </p>
+              <a
+                href={buildWhatsappUrl(
+                  contactDraft.footer_whatsapp_message?.trim() || DEFAULT_FOOTER_WHATSAPP_MESSAGE,
+                  contactDraft.whatsapp?.trim() || "5493541639512",
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 shrink-0"
+              >
+                Probar enlace en WhatsApp ↗
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -6,7 +6,7 @@ export function formatPrice(value: number): string {
   }).format(value);
 }
 
-export const WHATSAPP_NUMBER = "543541639512";
+export const WHATSAPP_NUMBER = "5493541639512";
 
 export function buildWhatsappUrl(message: string, number = WHATSAPP_NUMBER): string {
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;

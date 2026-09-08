@@ -66,7 +66,10 @@ function ContactPage() {
       icon: MessageCircle,
       label: "WhatsApp",
       value: contact?.phone ?? "",
-      href: buildWhatsappUrl("¡Hola Melina!", contact?.whatsapp),
+      href: buildWhatsappUrl(
+        "¡Holaa Melina! Vi tu sitio web y te quiero hacerte una consulta. Espero tu mensaje",
+        contact?.whatsapp,
+      ),
     },
     { icon: Mail, label: "Correo", value: contact?.email ?? "", href: `mailto:${contact?.email}` },
     {

@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/features/cart/cart-store";
+import { fetchBranding } from "@/lib/queries";
 
 function NotFoundComponent() {
   return (
@@ -98,7 +99,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -127,12 +130,41 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function DynamicFaviconUpdater() {
+  const { data: branding } = useQuery({
+    queryKey: ["branding"],
+    queryFn: fetchBranding,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const customFavicon = branding?.favicon_url;
+    if (customFavicon) {
+      const existingIcons = document.querySelectorAll("link[rel*='icon']");
+      if (existingIcons.length > 0) {
+        existingIcons.forEach((el) => {
+          (el as HTMLLinkElement).href = customFavicon;
+        });
+      } else {
+        const newLink = document.createElement("link");
+        newLink.rel = "icon";
+        newLink.href = customFavicon;
+        document.head.appendChild(newLink);
+      }
+    }
+  }, [branding?.favicon_url]);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
+        <DynamicFaviconUpdater />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <Toaster richColors position="top-center" />

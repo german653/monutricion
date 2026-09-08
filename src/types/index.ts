@@ -95,10 +95,12 @@ export interface ContactContent {
   whatsapp: string;
   instagram: string;
   address: string;
+  footer_whatsapp_message?: string;
 }
 
 export interface BrandingContent {
   logo_url?: string | null;
+  favicon_url?: string | null;
   brand_name?: string;
   tagline?: string;
 }
