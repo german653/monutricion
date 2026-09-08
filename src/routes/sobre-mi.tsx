@@ -54,7 +54,7 @@ function AboutPage() {
             <Leaf className="h-4 w-4" /> Sobre mí
           </span>
           <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{about?.title ?? "Sobre mí"}</h1>
-          <p className="text-muted-foreground">{about?.body}</p>
+          <p className="whitespace-pre-line text-muted-foreground">{about?.body}</p>
           <div className="grid gap-4 pt-2 sm:grid-cols-2">
             {highlights.map((h) => (
               <div key={h.key} className="rounded-3xl border border-border bg-card p-5 shadow-soft">
