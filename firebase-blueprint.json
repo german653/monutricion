@@ -68,7 +68,10 @@
         "date": { "type": "string" },
         "time": { "type": "string" },
         "notes": { "type": "string" },
-        "status": { "type": "string", "enum": ["pendiente", "confirmado", "cancelado", "completado"] },
+        "status": {
+          "type": "string",
+          "enum": ["pendiente", "confirmado", "cancelado", "completado"]
+        },
         "created_at": { "type": "string", "format": "date-time" },
         "updated_at": { "type": "string", "format": "date-time" }
       },

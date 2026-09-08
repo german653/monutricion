@@ -16,7 +16,6 @@ import {
   KeyRound,
   Lock,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/use-admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,7 +179,6 @@ function AdminPage() {
   const logout = async () => {
     localStorage.removeItem("admin_authenticated");
     window.dispatchEvent(new Event("admin-auth-change"));
-    await supabase.auth.signOut().catch(() => {});
     toast.success("Sesión cerrada");
     navigate({ to: "/" });
   };
