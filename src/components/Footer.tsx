@@ -9,6 +9,7 @@ const nav = [
   { to: "/", label: "Inicio" },
   { to: "/sobre-mi", label: "Sobre mí" },
   { to: "/servicios", label: "Servicios" },
+  { to: "/recetas", label: "Recetas" },
   { to: "/tienda", label: "Tienda" },
   { to: "/reservar", label: "Reservar turno" },
   { to: "/contacto", label: "Contacto" },
@@ -23,8 +24,8 @@ export function Footer() {
         <div className="space-y-4">
           <Logo />
           <p className="max-w-xs text-sm text-muted-foreground">
-            Acompañamiento nutricional profesional y cercano para transformar tu
-            bienestar con hábitos que perduran.
+            Acompañamiento nutricional profesional y cercano para transformar tu bienestar con
+            hábitos que perduran.
           </p>
         </div>
 

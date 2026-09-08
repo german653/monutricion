@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import { fetchAllServices, upsertService, deleteService } from "@/lib/queries";
 import { formatPrice } from "@/lib/format";
 import type { Service } from "@/types";
@@ -31,7 +32,10 @@ const empty: Partial<Service> = {
 
 export function ServiceManager() {
   const queryClient = useQueryClient();
-  const { data: services = [] } = useQuery({ queryKey: ["all-services"], queryFn: fetchAllServices });
+  const { data: services = [] } = useQuery({
+    queryKey: ["all-services"],
+    queryFn: fetchAllServices,
+  });
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Partial<Service>>(empty);
   const [saving, setSaving] = useState(false);
@@ -97,19 +101,47 @@ export function ServiceManager() {
           <p className="py-6 text-center text-sm text-muted-foreground">Aún no hay servicios.</p>
         )}
         {services.map((s) => (
-          <div key={s.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">
-                {s.title}
-                {!s.is_active && <span className="ml-2 text-xs text-muted-foreground">(oculto)</span>}
-              </p>
-              <p className="text-xs text-muted-foreground">{formatPrice(s.price)} · {s.duration || "—"}</p>
+          <div
+            key={s.id}
+            className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              {s.image_url && (
+                <img
+                  src={s.image_url}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-xl object-cover"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {s.title}
+                  {!s.is_active && (
+                    <span className="ml-2 text-xs text-muted-foreground">(oculto)</span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatPrice(s.price)} · {s.duration || "—"}
+                </p>
+              </div>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => openEdit(s)} aria-label="Editar">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={() => openEdit(s)}
+                aria-label="Editar"
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-destructive" onClick={() => remove(s.id)} aria-label="Eliminar">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full text-muted-foreground hover:text-destructive"
+                onClick={() => remove(s.id)}
+                aria-label="Eliminar"
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -118,7 +150,9 @@ export function ServiceManager() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><span /></DialogTrigger>
+        <DialogTrigger asChild>
+          <span />
+        </DialogTrigger>
         <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{draft.id ? "Editar servicio" : "Nuevo servicio"}</DialogTitle>
@@ -126,39 +160,65 @@ export function ServiceManager() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Título</Label>
-              <Input value={draft.title ?? ""} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+              <Input
+                value={draft.title ?? ""}
+                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Descripción</Label>
-              <Textarea rows={3} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={draft.description ?? ""}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Precio</Label>
-                <Input type="number" value={draft.price ?? 0} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  value={draft.price ?? 0}
+                  onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Duración</Label>
-                <Input value={draft.duration ?? ""} onChange={(e) => setDraft({ ...draft, duration: e.target.value })} placeholder="60 min" />
+                <Input
+                  value={draft.duration ?? ""}
+                  onChange={(e) => setDraft({ ...draft, duration: e.target.value })}
+                  placeholder="60 min"
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Orden</Label>
-                <Input type="number" value={draft.sort_order ?? 0} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  value={draft.sort_order ?? 0}
+                  onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })}
+                />
               </div>
               <div className="flex items-center gap-2 pt-8">
-                <Switch checked={draft.is_active ?? true} onCheckedChange={(v) => setDraft({ ...draft, is_active: v })} />
+                <Switch
+                  checked={draft.is_active ?? true}
+                  onCheckedChange={(v) => setDraft({ ...draft, is_active: v })}
+                />
                 <Label>Visible</Label>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>URL de imagen (opcional)</Label>
-              <Input value={draft.image_url ?? ""} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} placeholder="https://..." />
-            </div>
+            <ImageUpload
+              value={draft.image_url}
+              onChange={(url) => setDraft({ ...draft, image_url: url })}
+              folder="servicios"
+              label="Imagen del servicio"
+            />
           </div>
           <DialogFooter>
-            <Button variant="secondary" className="rounded-full" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button variant="secondary" className="rounded-full" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button className="rounded-full" onClick={save} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
             </Button>

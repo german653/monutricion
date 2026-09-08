@@ -96,3 +96,9 @@ export interface ContactContent {
   instagram: string;
   address: string;
 }
+
+export interface BrandingContent {
+  logo_url?: string | null;
+  brand_name?: string;
+  tagline?: string;
+}

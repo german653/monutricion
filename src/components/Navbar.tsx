@@ -3,13 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Menu, ShoppingBag, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/features/cart/cart-store";
 import { useAdmin } from "@/hooks/use-admin";
 import { CartSheet } from "@/components/CartSheet";
@@ -18,6 +12,7 @@ const links = [
   { to: "/", label: "Inicio" },
   { to: "/sobre-mi", label: "Sobre mí" },
   { to: "/servicios", label: "Servicios" },
+  { to: "/recetas", label: "Recetas" },
   { to: "/tienda", label: "Tienda" },
   { to: "/reservar", label: "Reservar turno" },
   { to: "/contacto", label: "Contacto" },
@@ -71,16 +66,18 @@ export function Navbar() {
             )}
           </Button>
 
-          <Button
-            asChild
-            className="hidden rounded-full md:inline-flex"
-          >
+          <Button asChild className="hidden rounded-full md:inline-flex">
             <Link to="/reservar">Reservar turno</Link>
           </Button>
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full lg:hidden" aria-label="Abrir menú">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full lg:hidden"
+                aria-label="Abrir menú"
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>

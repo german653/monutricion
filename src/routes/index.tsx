@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { fetchServices, fetchHero, fetchAbout } from "@/lib/queries";
 import { formatPrice } from "@/lib/format";
 import heroImg from "@/assets/hero-melina.jpg";
-import aboutImg from "@/assets/about-food.jpg";
+import aboutImg from "@/assets/about-melina.jpg";
 
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
@@ -29,10 +29,26 @@ export const Route = createFileRoute("/")({
 });
 
 const values = [
-  { icon: HeartPulse, title: "Salud real", text: "Hábitos sostenibles que cuidan tu bienestar a largo plazo." },
-  { icon: Leaf, title: "Cercanía", text: "Un acompañamiento humano, sin dietas imposibles ni culpa." },
-  { icon: Salad, title: "Personalizado", text: "Planes a medida según tus gustos, tu ritmo y tus objetivos." },
-  { icon: Sparkles, title: "Evidencia", text: "Nutrición basada en ciencia, adaptada a la vida real." },
+  {
+    icon: HeartPulse,
+    title: "Salud real",
+    text: "Hábitos sostenibles que cuidan tu bienestar a largo plazo.",
+  },
+  {
+    icon: Leaf,
+    title: "Cercanía",
+    text: "Un acompañamiento humano, sin dietas imposibles ni culpa.",
+  },
+  {
+    icon: Salad,
+    title: "Personalizado",
+    text: "Planes a medida según tus gustos, tu ritmo y tus objetivos.",
+  },
+  {
+    icon: Sparkles,
+    title: "Evidencia",
+    text: "Nutrición basada en ciencia, adaptada a la vida real.",
+  },
 ];
 
 function Index() {
@@ -44,7 +60,10 @@ function Index() {
     <SiteLayout>
       {/* Hero */}
       <section className="relative overflow-hidden bg-surface">
-        <div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-accent/60 blur-3xl" aria-hidden />
+        <div
+          className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-accent/60 blur-3xl"
+          aria-hidden
+        />
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -82,7 +101,7 @@ function Index() {
           >
             <div className="overflow-hidden rounded-[2.5rem] shadow-glow">
               <img
-                src={heroImg}
+                src={hero?.image_url || heroImg}
                 alt="Melina Oviedo, nutricionista"
                 width={1408}
                 height={1600}
@@ -123,12 +142,21 @@ function Index() {
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24 lg:px-8">
           <Reveal>
             <div className="overflow-hidden rounded-[2.5rem] shadow-card">
-              <img src={aboutImg} alt="Alimentación saludable" width={1200} height={1200} loading="lazy" className="h-full w-full object-cover" />
+              <img
+                src={about?.image_url || aboutImg}
+                alt="Melina Oviedo - Nutrición"
+                width={1200}
+                height={1200}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
             </div>
           </Reveal>
           <Reveal delay={0.1} className="space-y-5">
-            <h2 className="font-display text-3xl tracking-tight sm:text-4xl">{about?.title ?? "Sobre mí"}</h2>
-            <p className="text-muted-foreground">{about?.body}</p>
+            <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
+              {about?.title ?? "Hola, soy Meli Oviedo"}
+            </h2>
+            <p className="text-muted-foreground line-clamp-4 whitespace-pre-line">{about?.body}</p>
             <Button asChild variant="secondary" className="rounded-full">
               <Link to="/sobre-mi">Conocer mi historia</Link>
             </Button>
@@ -140,7 +168,9 @@ function Index() {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <Reveal className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">Servicios</h2>
-          <p className="mt-3 text-muted-foreground">Elegí el acompañamiento que mejor se adapta a vos.</p>
+          <p className="mt-3 text-muted-foreground">
+            Elegí el acompañamiento que mejor se adapta a vos.
+          </p>
         </Reveal>
         <div className="grid gap-6 md:grid-cols-3">
           {services.slice(0, 3).map((s, i) => (
@@ -156,7 +186,9 @@ function Index() {
                   )}
                 </div>
                 <div className="mt-4 flex items-center justify-between">
-                  <span className="font-display text-2xl font-semibold text-primary">{formatPrice(s.price)}</span>
+                  <span className="font-display text-2xl font-semibold text-primary">
+                    {formatPrice(s.price)}
+                  </span>
                   <Button asChild size="sm" className="rounded-full">
                     <Link to="/reservar">Reservar</Link>
                   </Button>

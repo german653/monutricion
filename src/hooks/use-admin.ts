@@ -9,41 +9,85 @@ interface AdminState {
 }
 
 async function checkAdmin(userId: string): Promise<boolean> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as unknown as { from: (t: string) => any };
-  const { data } = await db
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  return !!data;
+  try {
+    const { data } = await db
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    return !!data;
+  } catch {
+    return false;
+  }
 }
 
 export function useAdmin(): AdminState {
-  const [state, setState] = useState<AdminState>({
-    loading: true,
-    session: null,
-    isAdmin: false,
+  const [state, setState] = useState<AdminState>(() => {
+    const localAuth =
+      typeof window !== "undefined" && localStorage.getItem("admin_authenticated") === "true";
+    return {
+      loading: true,
+      session: null,
+      isAdmin: localAuth,
+    };
   });
 
   useEffect(() => {
     let active = true;
 
-    const resolve = async (session: Session | null) => {
+    const check = async () => {
+      const isLocal =
+        typeof window !== "undefined" && localStorage.getItem("admin_authenticated") === "true";
+
+      if (isLocal) {
+        if (active) setState({ loading: false, session: null, isAdmin: true });
+        return;
+      }
+
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
+        if (!session) {
+          if (active) setState({ loading: false, session: null, isAdmin: false });
+          return;
+        }
+        const hasRole = await checkAdmin(session.user.id);
+        if (active) setState({ loading: false, session, isAdmin: hasRole });
+      } catch {
+        if (active) setState({ loading: false, session: null, isAdmin: isLocal });
+      }
+    };
+
+    check();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_e, session) => {
+      const isLocal =
+        typeof window !== "undefined" && localStorage.getItem("admin_authenticated") === "true";
+      if (isLocal) {
+        if (active) setState({ loading: false, session: null, isAdmin: true });
+        return;
+      }
       if (!session) {
         if (active) setState({ loading: false, session: null, isAdmin: false });
         return;
       }
-      const isAdmin = await checkAdmin(session.user.id);
-      if (active) setState({ loading: false, session, isAdmin });
-    };
+      checkAdmin(session.user.id).then((hasRole) => {
+        if (active) setState({ loading: false, session, isAdmin: hasRole });
+      });
+    });
 
-    supabase.auth.getSession().then(({ data }) => resolve(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, session) => resolve(session));
+    const onAuthChange = () => check();
+    window.addEventListener("admin-auth-change", onAuthChange);
+    window.addEventListener("storage", onAuthChange);
 
     return () => {
       active = false;
-      data.subscription.unsubscribe();
+      authListener.subscription.unsubscribe();
+      window.removeEventListener("admin-auth-change", onAuthChange);
+      window.removeEventListener("storage", onAuthChange);
     };
   }, []);
 

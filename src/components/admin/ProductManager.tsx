@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import { fetchAllProducts, fetchCategories, upsertProduct, deleteProduct } from "@/lib/queries";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/types";
@@ -30,8 +31,14 @@ const empty: Partial<Product> = {
 
 export function ProductManager() {
   const queryClient = useQueryClient();
-  const { data: products = [] } = useQuery({ queryKey: ["all-products"], queryFn: fetchAllProducts });
-  const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  const { data: products = [] } = useQuery({
+    queryKey: ["all-products"],
+    queryFn: fetchAllProducts,
+  });
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Partial<Product>>(empty);
   const [saving, setSaving] = useState(false);
@@ -98,19 +105,47 @@ export function ProductManager() {
           <p className="py-6 text-center text-sm text-muted-foreground">Aún no hay productos.</p>
         )}
         {products.map((p) => (
-          <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">
-                {p.name}
-                {!p.is_active && <span className="ml-2 text-xs text-muted-foreground">(oculto)</span>}
-              </p>
-              <p className="text-xs text-muted-foreground">{formatPrice(p.price)} · Stock: {p.stock}</p>
+          <div
+            key={p.id}
+            className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3"
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              {p.image_url && (
+                <img
+                  src={p.image_url}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-xl object-cover"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {p.name}
+                  {!p.is_active && (
+                    <span className="ml-2 text-xs text-muted-foreground">(oculto)</span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatPrice(p.price)} · Stock: {p.stock}
+                </p>
+              </div>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <Button variant="ghost" size="icon" className="rounded-full" onClick={() => openEdit(p)} aria-label="Editar">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={() => openEdit(p)}
+                aria-label="Editar"
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-destructive" onClick={() => remove(p.id)} aria-label="Eliminar">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full text-muted-foreground hover:text-destructive"
+                onClick={() => remove(p.id)}
+                aria-label="Eliminar"
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -126,20 +161,35 @@ export function ProductManager() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Nombre</Label>
-              <Input value={draft.name ?? ""} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+              <Input
+                value={draft.name ?? ""}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Descripción</Label>
-              <Textarea rows={3} value={draft.description ?? ""} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+              <Textarea
+                rows={3}
+                value={draft.description ?? ""}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Precio</Label>
-                <Input type="number" value={draft.price ?? 0} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  value={draft.price ?? 0}
+                  onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Stock</Label>
-                <Input type="number" value={draft.stock ?? 0} onChange={(e) => setDraft({ ...draft, stock: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  value={draft.stock ?? 0}
+                  onChange={(e) => setDraft({ ...draft, stock: Number(e.target.value) })}
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -151,21 +201,30 @@ export function ProductManager() {
               >
                 <option value="">Sin categoría</option>
                 {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
             </div>
+            <ImageUpload
+              value={draft.image_url}
+              onChange={(url) => setDraft({ ...draft, image_url: url })}
+              folder="productos"
+              label="Imagen del producto"
+            />
             <div className="flex items-center gap-2">
-              <Switch checked={draft.is_active ?? true} onCheckedChange={(v) => setDraft({ ...draft, is_active: v })} />
+              <Switch
+                checked={draft.is_active ?? true}
+                onCheckedChange={(v) => setDraft({ ...draft, is_active: v })}
+              />
               <Label>Visible en la tienda</Label>
-            </div>
-            <div className="space-y-2">
-              <Label>URL de imagen (opcional)</Label>
-              <Input value={draft.image_url ?? ""} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} placeholder="https://..." />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="secondary" className="rounded-full" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button variant="secondary" className="rounded-full" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button className="rounded-full" onClick={save} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar
             </Button>

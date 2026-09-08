@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "Service": {
+      "title": "Service",
+      "description": "Nutritional consultation services and plans",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "duration": { "type": "string" },
+        "price": { "type": "number" },
+        "sort_order": { "type": "number" },
+        "is_active": { "type": "boolean" },
+        "image_url": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "price", "is_active"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Nutritional products, supplements, and snacks",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "category_id": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "image_url": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "stock", "is_active"]
+    },
+    "Recipe": {
+      "title": "Recipe",
+      "description": "Healthy recipes created by the nutritionist",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "image_url": { "type": "string" },
+        "category": { "type": "string" },
+        "prep_time": { "type": "string" },
+        "servings": { "type": "string" },
+        "ingredients": { "type": "string" },
+        "steps": { "type": "string" },
+        "sort_order": { "type": "number" },
+        "is_published": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "ingredients", "steps", "is_published"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Patient booking for consultation",
+      "type": "object",
+      "properties": {
+        "first_name": { "type": "string" },
+        "last_name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "service_id": { "type": "string" },
+        "service_name": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["pendiente", "confirmado", "cancelado", "completado"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["first_name", "last_name", "email", "phone", "date", "time", "status"]
+    },
+    "Availability": {
+      "title": "Availability",
+      "description": "Calendar slots opened by the nutritionist",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "time"]
+    },
+    "SiteContent": {
+      "title": "SiteContent",
+      "description": "Dynamic web texts and banner images for Hero, About, and Contact",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "value": { "type": "object" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["key", "value"]
+    }
+  },
+  "firestore": {
+    "collections": {
+      "services": {
+        "description": "Nutritional services",
+        "entity": "Service"
+      },
+      "products": {
+        "description": "Store products",
+        "entity": "Product"
+      },
+      "recipes": {
+        "description": "Healthy recipes",
+        "entity": "Recipe"
+      },
+      "appointments": {
+        "description": "Client consultations",
+        "entity": "Appointment"
+      },
+      "availability": {
+        "description": "Available time slots",
+        "entity": "Availability"
+      },
+      "site_content": {
+        "description": "Editable site texts and hero media",
+        "entity": "SiteContent"
+      },
+      "categories": {
+        "description": "Product categories"
+      },
+      "faq": {
+        "description": "Frequently asked questions"
+      }
+    }
+  }
+}

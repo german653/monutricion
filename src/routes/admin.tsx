@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -11,27 +11,38 @@ import {
   Trash2,
   MessageCircle,
   CalendarClock,
+  UtensilsCrossed,
+  LayoutTemplate,
+  KeyRound,
+  Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/use-admin";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { ServiceManager } from "@/components/admin/ServiceManager";
 import { ProductManager } from "@/components/admin/ProductManager";
+import { RecipeManager } from "@/components/admin/RecipeManager";
+import { ContentManager } from "@/components/admin/ContentManager";
 import { AvailabilityManager } from "@/components/admin/AvailabilityManager";
 import {
   fetchAppointments,
   fetchAllProducts,
   fetchAllServices,
+  fetchAllRecipes,
   updateAppointmentStatus,
   deleteAppointment,
 } from "@/lib/queries";
 import type { AppointmentStatus } from "@/types";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Panel Admin — Melina Oviedo" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Panel Admin — Melina Oviedo" }, { name: "robots", content: "noindex" }],
+  }),
   component: AdminPage,
 });
 
@@ -45,21 +56,97 @@ function AdminPage() {
   const { loading, isAdmin } = useAdmin();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!loading && !isAdmin) navigate({ to: "/" });
-  }, [loading, isAdmin, navigate]);
+  const [passInput, setPassInput] = useState("");
+  const [passError, setPassError] = useState(false);
 
   const enabled = isAdmin;
-  const { data: appointments = [] } = useQuery({ queryKey: ["appointments"], queryFn: fetchAppointments, enabled });
-  const { data: products = [] } = useQuery({ queryKey: ["all-products"], queryFn: fetchAllProducts, enabled });
-  const { data: services = [] } = useQuery({ queryKey: ["all-services"], queryFn: fetchAllServices, enabled });
+  const { data: appointments = [] } = useQuery({
+    queryKey: ["appointments"],
+    queryFn: fetchAppointments,
+    enabled,
+  });
+  const { data: products = [] } = useQuery({
+    queryKey: ["all-products"],
+    queryFn: fetchAllProducts,
+    enabled,
+  });
+  const { data: services = [] } = useQuery({
+    queryKey: ["all-services"],
+    queryFn: fetchAllServices,
+    enabled,
+  });
+  const { data: recipes = [] } = useQuery({
+    queryKey: ["all-recipes"],
+    queryFn: fetchAllRecipes,
+    enabled,
+  });
   const [busy, setBusy] = useState<string | null>(null);
 
-  if (loading || !isAdmin) {
+  if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    const handleLogin = (e: React.FormEvent) => {
+      e.preventDefault();
+      const adminPass = import.meta.env.VITE_ADMIN_PASSWORD;
+      if (adminPass && passInput.trim() === adminPass) {
+        localStorage.setItem("admin_authenticated", "true");
+        window.dispatchEvent(new Event("admin-auth-change"));
+        toast.success("¡Bienvenida Melina!");
+        setPassInput("");
+        setPassError(false);
+      } else {
+        setPassError(true);
+        toast.error("Contraseña incorrecta");
+      }
+    };
+
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-surface p-4">
+        <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 shadow-card text-center space-y-6">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Lock className="h-7 w-7" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="font-display text-2xl">Panel de Administración</h1>
+            <p className="text-sm text-muted-foreground">Ingresá tu contraseña para continuar</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2 text-left">
+              <Label htmlFor="admin-pass-field">Contraseña</Label>
+              <Input
+                id="admin-pass-field"
+                type="password"
+                autoFocus
+                placeholder="••••"
+                value={passInput}
+                onChange={(e) => {
+                  setPassInput(e.target.value);
+                  setPassError(false);
+                }}
+                className={`rounded-xl text-center text-xl tracking-widest ${passError ? "border-destructive ring-1 ring-destructive" : ""}`}
+              />
+            </div>
+            <Button type="submit" className="w-full rounded-xl">
+              Ingresar al Panel
+            </Button>
+          </form>
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full text-xs text-muted-foreground"
+              onClick={() => navigate({ to: "/" })}
+            >
+              Volver al inicio
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -91,7 +178,10 @@ function AdminPage() {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem("admin_authenticated");
+    window.dispatchEvent(new Event("admin-auth-change"));
+    await supabase.auth.signOut().catch(() => {});
+    toast.success("Sesión cerrada");
     navigate({ to: "/" });
   };
 
@@ -99,7 +189,7 @@ function AdminPage() {
     { icon: CalendarCheck, label: "Reservas", value: appointments.length },
     { icon: Package, label: "Productos", value: products.length },
     { icon: Salad, label: "Servicios", value: services.length },
-    { icon: CalendarCheck, label: "Pendientes", value: appointments.filter((a) => a.status === "pendiente").length },
+    { icon: UtensilsCrossed, label: "Recetas", value: recipes.length },
   ];
 
   const nextStatus: Record<AppointmentStatus, AppointmentStatus> = {
@@ -136,10 +226,24 @@ function AdminPage() {
 
         <Tabs defaultValue="reservas" className="w-full">
           <TabsList className="mb-6 flex h-auto flex-wrap justify-start gap-1 rounded-2xl bg-card p-1">
-            <TabsTrigger value="reservas" className="rounded-xl"><CalendarCheck className="mr-1.5 h-4 w-4" /> Reservas</TabsTrigger>
-            <TabsTrigger value="horarios" className="rounded-xl"><CalendarClock className="mr-1.5 h-4 w-4" /> Horarios</TabsTrigger>
-            <TabsTrigger value="servicios" className="rounded-xl"><Salad className="mr-1.5 h-4 w-4" /> Servicios</TabsTrigger>
-            <TabsTrigger value="productos" className="rounded-xl"><Package className="mr-1.5 h-4 w-4" /> Productos</TabsTrigger>
+            <TabsTrigger value="reservas" className="rounded-xl">
+              <CalendarCheck className="mr-1.5 h-4 w-4" /> Reservas
+            </TabsTrigger>
+            <TabsTrigger value="horarios" className="rounded-xl">
+              <CalendarClock className="mr-1.5 h-4 w-4" /> Horarios
+            </TabsTrigger>
+            <TabsTrigger value="servicios" className="rounded-xl">
+              <Salad className="mr-1.5 h-4 w-4" /> Servicios
+            </TabsTrigger>
+            <TabsTrigger value="productos" className="rounded-xl">
+              <Package className="mr-1.5 h-4 w-4" /> Productos
+            </TabsTrigger>
+            <TabsTrigger value="recetas" className="rounded-xl">
+              <UtensilsCrossed className="mr-1.5 h-4 w-4" /> Recetas
+            </TabsTrigger>
+            <TabsTrigger value="contenido" className="rounded-xl">
+              <LayoutTemplate className="mr-1.5 h-4 w-4" /> Contenido
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="reservas">
@@ -164,16 +268,28 @@ function AdminPage() {
                         <p className="text-sm text-muted-foreground">
                           {a.email} · {a.phone}
                         </p>
-                        {a.notes && <p className="mt-1 text-sm italic text-muted-foreground">“{a.notes}”</p>}
+                        {a.notes && (
+                          <p className="mt-1 text-sm italic text-muted-foreground">“{a.notes}”</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <a href={waLink(a.phone)} target="_blank" rel="noopener noreferrer">
-                          <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-success" aria-label="Contactar por WhatsApp">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-full text-muted-foreground hover:text-success"
+                            aria-label="Contactar por WhatsApp"
+                          >
                             <MessageCircle className="h-4 w-4" />
                           </Button>
                         </a>
-                        <button onClick={() => changeStatus(a.id, nextStatus[a.status])} disabled={busy === a.id}>
-                          <Badge className={`cursor-pointer capitalize ${statusStyles[a.status]}`}>{a.status}</Badge>
+                        <button
+                          onClick={() => changeStatus(a.id, nextStatus[a.status])}
+                          disabled={busy === a.id}
+                        >
+                          <Badge className={`cursor-pointer capitalize ${statusStyles[a.status]}`}>
+                            {a.status}
+                          </Badge>
                         </button>
                         <Button
                           variant="ghost"
@@ -203,6 +319,14 @@ function AdminPage() {
 
           <TabsContent value="productos">
             <ProductManager />
+          </TabsContent>
+
+          <TabsContent value="recetas">
+            <RecipeManager />
+          </TabsContent>
+
+          <TabsContent value="contenido">
+            <ContentManager />
           </TabsContent>
         </Tabs>
       </main>

@@ -20,7 +20,9 @@ function generateRange(from: string, to: string, stepMin: number): string[] {
   const end = th * 60 + tm;
   const out: string[] = [];
   while (cur <= end && out.length < 100) {
-    out.push(`${String(Math.floor(cur / 60)).padStart(2, "0")}:${String(cur % 60).padStart(2, "0")}`);
+    out.push(
+      `${String(Math.floor(cur / 60)).padStart(2, "0")}:${String(cur % 60).padStart(2, "0")}`,
+    );
     cur += stepMin;
   }
   return out;
@@ -92,22 +94,38 @@ export function AvailabilityManager() {
         <h2 className="font-display text-xl">Horarios disponibles</h2>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        Definí los días y las horas en que la gente puede reservar. Solo estos horarios aparecerán en la página de reservas.
+        Definí los días y las horas en que la gente puede reservar. Solo estos horarios aparecerán
+        en la página de reservas.
       </p>
 
       <div className="mb-6 space-y-4 rounded-2xl border border-border bg-surface p-4">
         <div className="space-y-2">
           <Label>Día</Label>
-          <Input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl" />
+          <Input
+            type="date"
+            min={today}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-xl"
+          />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <div className="space-y-2">
             <Label>Agregar un horario</Label>
-            <Input type="time" value={single} onChange={(e) => setSingle(e.target.value)} className="rounded-xl" />
+            <Input
+              type="time"
+              value={single}
+              onChange={(e) => setSingle(e.target.value)}
+              className="rounded-xl"
+            />
           </div>
           <div className="flex items-end">
-            <Button className="w-full rounded-full sm:w-auto" onClick={() => add([single])} disabled={busy}>
+            <Button
+              className="w-full rounded-full sm:w-auto"
+              onClick={() => add([single])}
+              disabled={busy}
+            >
               <Plus className="mr-1 h-4 w-4" /> Agregar
             </Button>
           </div>
@@ -118,18 +136,40 @@ export function AvailabilityManager() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground">Desde</span>
-              <Input type="time" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded-xl" />
+              <Input
+                type="time"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="rounded-xl"
+              />
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground">Hasta</span>
-              <Input type="time" value={to} onChange={(e) => setTo(e.target.value)} className="rounded-xl" />
+              <Input
+                type="time"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="rounded-xl"
+              />
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground">Cada (min)</span>
-              <Input type="number" min={5} step={5} value={step} onChange={(e) => setStep(Number(e.target.value))} className="rounded-xl" />
+              <Input
+                type="number"
+                min={5}
+                step={5}
+                value={step}
+                onChange={(e) => setStep(Number(e.target.value))}
+                className="rounded-xl"
+              />
             </div>
             <div className="flex items-end">
-              <Button variant="secondary" className="w-full rounded-full" onClick={() => add(generateRange(from, to, step))} disabled={busy}>
+              <Button
+                variant="secondary"
+                className="w-full rounded-full"
+                onClick={() => add(generateRange(from, to, step))}
+                disabled={busy}
+              >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generar"}
               </Button>
             </div>
@@ -139,16 +179,25 @@ export function AvailabilityManager() {
 
       <div className="space-y-4">
         {grouped.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">Todavía no cargaste horarios.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Todavía no cargaste horarios.
+          </p>
         )}
         {grouped.map(([d, items]) => (
           <div key={d} className="rounded-2xl border border-border p-4">
             <p className="mb-3 text-sm font-medium capitalize">{formatDate(d)}</p>
             <div className="flex flex-wrap gap-2">
               {items.map((it) => (
-                <span key={it.id} className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-sm text-accent-foreground">
+                <span
+                  key={it.id}
+                  className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-sm text-accent-foreground"
+                >
                   {it.time}
-                  <button onClick={() => remove(it.id)} aria-label={`Eliminar ${it.time}`} className="text-muted-foreground hover:text-destructive">
+                  <button
+                    onClick={() => remove(it.id)}
+                    aria-label={`Eliminar ${it.time}`}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </span>

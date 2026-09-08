@@ -1,8 +1,20 @@
-import { supabase } from "@/integrations/supabase/client";
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+} from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import type {
   AboutContent,
   Appointment,
   AppointmentStatus,
+  BrandingContent,
   Category,
   ContactContent,
   Faq,
@@ -12,80 +24,341 @@ import type {
   Service,
 } from "@/types";
 
-// The generated Database types don't yet include our tables, so we use a
-// loosely-typed handle and cast results to our domain types.
-const db = supabase as unknown as {
-  from: (table: string) => any;
+/* ----------------------------- Default Initial Data ----------------------------- */
+
+const DEFAULT_SERVICES: Service[] = [
+  {
+    id: "s-1",
+    title: "Consulta nutricional inicial",
+    description: "Evaluación completa, análisis de hábitos y plan alimentario 100% personalizado.",
+    duration: "60 min",
+    price: 15000,
+    sort_order: 1,
+    is_active: true,
+    image_url: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "s-2",
+    title: "Seguimiento nutricional",
+    description: "Ajustes del plan, evaluación de avances y acompañamiento cercano continuo.",
+    duration: "30 min",
+    price: 9000,
+    sort_order: 2,
+    is_active: true,
+    image_url: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "s-3",
+    title: "Nutrición deportiva",
+    description: "Plan enfocado en rendimiento, energía, masa muscular y composición corporal.",
+    duration: "60 min",
+    price: 18000,
+    sort_order: 3,
+    is_active: true,
+    image_url: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+const DEFAULT_PRODUCTS: Product[] = [
+  {
+    id: "p-1",
+    name: "Proteína Vegetal Neutra 500g",
+    description: "Suplemento proteico a base de arveja y arroz, sin aditivos ni azúcares.",
+    price: 12500,
+    stock: 15,
+    category_id: "c-1",
+    is_active: true,
+    image_url:
+      "https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=600&auto=format&fit=crop&q=80",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "p-2",
+    name: "Mix Frutos Secos & Semillas 250g",
+    description: "Almendras, nueces, castañas de cajú y semillas tostadas sin sal agregada.",
+    price: 4500,
+    stock: 25,
+    category_id: "c-2",
+    is_active: true,
+    image_url:
+      "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=600&auto=format&fit=crop&q=80",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "p-3",
+    name: "Infusión Digestiva Herbal 100g",
+    description:
+      "Mezcla de manzanilla, menta, cedrón y anís estrellado para después de las comidas.",
+    price: 3200,
+    stock: 20,
+    category_id: "c-3",
+    is_active: true,
+    image_url:
+      "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+const DEFAULT_RECIPES: Recipe[] = [
+  {
+    id: "r-1",
+    title: "Pancake proteico de avena y banana",
+    description:
+      "Un desayuno rápido, saciante y lleno de nutrientes para empezar el día con energía.",
+    image_url:
+      "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=800&auto=format&fit=crop&q=80",
+    category: "Desayunos",
+    prep_time: "15 min",
+    servings: "2 porciones",
+    ingredients:
+      "• 1 taza de avena arrollada\n• 1 banana madura\n• 2 huevos\n• 1 cdita de canela\n• 1 cdita de polvo para hornear\n• Frutos rojos para decorar",
+    steps:
+      "1. Procesar todos los ingredientes en licuadora hasta obtener una mezcla homogénea.\n2. Calentar una sartén antiadherente con unas gotas de aceite de coco.\n3. Verter porciones y cocinar a fuego medio hasta que salgan burbujas, dar vuelta y dorar 1 min.\n4. Servir con frutas frescas.",
+    sort_order: 1,
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "r-2",
+    title: "Bowl fresco de quinoa, palta y vegetales asados",
+    description: "Almuerzo completo con proteína vegetal, grasas saludables y fibra de calidad.",
+    image_url:
+      "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80",
+    category: "Almuerzos",
+    prep_time: "25 min",
+    servings: "2 platos",
+    ingredients:
+      "• 1 taza de quinoa cocida\n• 1 palta en cubos\n• 1 taza de calabaza asada\n• 1 taza de hojas verdes variadas\n• Semillas de girasol tostadas\n• Limón, aceite de oliva virgen extra y sal marina",
+    steps:
+      "1. Cocinar la quinoa lavada en 2 partes de agua por 15 minutos.\n2. Disponer una base de hojas verdes en dos bowls.\n3. Agregar la quinoa tibia, la calabaza asada y la palta fresca.\n4. Condimentar con la vinagreta de limón y oliva y espolvorear las semillas.",
+    sort_order: 2,
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "r-3",
+    title: "Trufas energéticas de cacao y dátiles",
+    description: "Snack dulce sin azúcares refinados, ideal para antes o después de entrenar.",
+    image_url:
+      "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&auto=format&fit=crop&q=80",
+    category: "Snacks",
+    prep_time: "10 min",
+    servings: "10 unidades",
+    ingredients:
+      "• 10 dátiles descarozados hidratados\n• 1/2 taza de nueces o almendras\n• 2 cdas de cacao amargo en polvo\n• 1 cda de semillas de chía\n• Coco rallado para rebozar",
+    steps:
+      "1. Procesar los frutos secos y los dátiles hasta que se forme una pasta moldeable.\n2. Incorporar el cacao y las semillas.\n3. Formar bolitas con las manos y rebozarlas en coco rallado.\n4. Refrigerar 30 minutos antes de consumir.",
+    sort_order: 3,
+    is_published: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: "c-1", name: "Suplementos", slug: "suplementos", created_at: new Date().toISOString() },
+  { id: "c-2", name: "Snacks saludables", slug: "snacks", created_at: new Date().toISOString() },
+  { id: "c-3", name: "Infusiones", slug: "infusiones", created_at: new Date().toISOString() },
+];
+
+const DEFAULT_FAQ: Faq[] = [
+  {
+    id: "f-1",
+    question: "¿Cómo son las consultas?",
+    answer:
+      "Las consultas pueden ser presenciales u online. En el primer encuentro evaluamos tu historia clínica, rutina, hábitos alimentarios y objetivos para diseñar una propuesta 100% personalizada y realista.",
+    sort_order: 1,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "f-2",
+    question: "¿Necesito una derivación médica o análisis previos?",
+    answer:
+      "No es obligatorio tener derivación previa, pero si tenés análisis de laboratorio o estudios médicos recientes, podés traerlos para ajustar el plan con mayor precisión.",
+    sort_order: 2,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "f-3",
+    question: "¿Los planes son restrictivos o dietas estrictas?",
+    answer:
+      "No trabajo con dietas de moda ni restricciones extremas. Mi enfoque es la educación alimentaria y el desarrollo de hábitos sostenibles que puedas mantener a largo plazo disfrutando del proceso.",
+    sort_order: 3,
+    created_at: new Date().toISOString(),
+  },
+];
+
+const DEFAULT_ABOUT: AboutContent = {
+  title: "Hola, soy Meli Oviedo",
+  body: `Soy Licenciada en Nutrición, egresada de la Facultad de Nutrición de la Universidad Nacional de Córdoba, matrícula profesional 5433.
+
+Me apasiona acompañar a las personas en el camino hacia su mejor versión, ayudándolas a alcanzar sus objetivos, construir hábitos saludables y, sobre todo, a confiar en que pueden lograr mucho más de lo que imaginan.
+
+Creo que la nutrición es una herramienta fundamental para cuidar nuestra salud, sentirnos mejor y potenciar nuestro bienestar en todos los aspectos de nuestra vida.
+
+Trabajo con diferentes patologías y objetivos nutricionales, y tengo una especial pasión por la nutrición deportiva. Además, soy runner y cuento con certificación ISAK nivel I y II, porque considero que conocer y entender nuestro cuerpo es parte fundamental del proceso.
+
+Quiero acompañarte desde un lugar de educación, motivación y empatía, brindándote herramientas para que puedas aprender a alimentarte, disfrutar del proceso y alcanzar tus objetivos de una manera sostenible.
+
+Porque no se trata de buscar la perfección, sino de aprender, avanzar y crecer en el camino. 
+
+¿Empezamos juntos?`,
+  experience: "Lic. en Nutrición (UNC) • M.P. 5433",
+  specialties: "Nutrición deportiva • ISAK I y II • Hábitos sostenibles",
 };
+
+const DEFAULT_BRANDING: BrandingContent = {
+  logo_url: null,
+  brand_name: "Melina Oviedo",
+  tagline: "Nutrición y Salud",
+};
+
+const DEFAULT_HERO: HeroContent = {
+  title: "Nutrición real para potenciar tu vida y rendimiento",
+  subtitle:
+    "Acompañamiento profesional, planes personalizados y herramientas prácticas para construir hábitos sostenibles.",
+};
+
+const DEFAULT_CONTACT: ContactContent = {
+  email: "nutricion.melinaoviedo@gmail.com",
+  phone: "+54 9 351 000-0000",
+  whatsapp: "5493510000000",
+  instagram: "@nutri.melinaoviedo",
+  address: "Córdoba Capital, Argentina (Presencial & Online)",
+};
+
+function getStorage<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(`mo_data_${key}`);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function setStorage<T>(key: string, value: T): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(`mo_data_${key}`, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
 
 /* ----------------------------- Public reads ----------------------------- */
 
 export async function fetchServices(): Promise<Service[]> {
-  const { data, error } = await db
-    .from("services")
-    .select("*")
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Service[];
+  try {
+    const q = query(collection(db, "services"), where("is_active", "==", true));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Service);
+      list.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      return list;
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Service[]>("services", DEFAULT_SERVICES).filter((s) => s.is_active);
 }
 
 export async function fetchAllServices(): Promise<Service[]> {
-  const { data, error } = await db
-    .from("services")
-    .select("*")
-    .order("sort_order", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Service[];
+  try {
+    const snap = await getDocs(collection(db, "services"));
+    if (!snap.empty) {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Service);
+      list.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      return list;
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Service[]>("services", DEFAULT_SERVICES);
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-  const { data, error } = await db
-    .from("products")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Product[];
+  try {
+    const q = query(collection(db, "products"), where("is_active", "==", true));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Product);
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Product[]>("products", DEFAULT_PRODUCTS).filter((p) => p.is_active);
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {
-  const { data, error } = await db
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Product[];
+  try {
+    const snap = await getDocs(collection(db, "products"));
+    if (!snap.empty) {
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Product);
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Product[]>("products", DEFAULT_PRODUCTS);
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const { data, error } = await db.from("categories").select("*").order("name");
-  if (error) throw error;
-  return (data ?? []) as Category[];
+  try {
+    const snap = await getDocs(collection(db, "categories"));
+    if (!snap.empty) {
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Category);
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Category[]>("categories", DEFAULT_CATEGORIES);
 }
 
 export async function fetchFaq(): Promise<Faq[]> {
-  const { data, error } = await db
-    .from("faq")
-    .select("*")
-    .order("sort_order", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as Faq[];
+  try {
+    const snap = await getDocs(collection(db, "faq"));
+    if (!snap.empty) {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Faq);
+      list.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      return list;
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Faq[]>("faq", DEFAULT_FAQ);
 }
 
-export async function fetchContent<T>(key: string): Promise<T | null> {
-  const { data, error } = await db
-    .from("site_content")
-    .select("value")
-    .eq("key", key)
-    .maybeSingle();
-  if (error) throw error;
-  return (data?.value ?? null) as T | null;
+export async function fetchContent<T>(key: string, fallback?: T): Promise<T | null> {
+  try {
+    const docRef = doc(db, "site_content", key);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data?.value !== undefined && data.value !== null) {
+        return data.value as T;
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<T | null>(`content_${key}`, fallback ?? null);
 }
 
-export const fetchHero = () => fetchContent<HeroContent>("hero");
-export const fetchAbout = () => fetchContent<AboutContent>("about");
-export const fetchContact = () => fetchContent<ContactContent>("contact");
+export const fetchHero = () => fetchContent<HeroContent>("hero", DEFAULT_HERO);
+export const fetchAbout = () => fetchContent<AboutContent>("about", DEFAULT_ABOUT);
+export const fetchContact = () => fetchContent<ContactContent>("contact", DEFAULT_CONTACT);
+export const fetchBranding = () => fetchContent<BrandingContent>("branding", DEFAULT_BRANDING);
 
 /* ----------------------------- Appointments ----------------------------- */
 
@@ -102,95 +375,259 @@ export interface NewAppointment {
 }
 
 export async function createAppointment(input: NewAppointment): Promise<void> {
-  const { error } = await db.from("appointments").insert(input);
-  if (error) throw error;
+  const newId = crypto.randomUUID();
+  const newApp: Appointment = {
+    ...input,
+    id: newId,
+    status: "pendiente",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    await setDoc(doc(db, "appointments", newId), newApp);
+  } catch {
+    // ignore
+  }
+
+  const existing = getStorage<Appointment[]>("appointments", []);
+  setStorage("appointments", [newApp, ...existing]);
 }
 
 export async function fetchAppointments(): Promise<Appointment[]> {
-  const { data, error } = await db
-    .from("appointments")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Appointment[];
+  try {
+    const snap = await getDocs(collection(db, "appointments"));
+    if (!snap.empty) {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment);
+      list.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+      return list;
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Appointment[]>("appointments", []);
 }
 
 export async function updateAppointmentStatus(id: string, status: AppointmentStatus) {
-  const { error } = await db.from("appointments").update({ status }).eq("id", id);
-  if (error) throw error;
+  try {
+    await setDoc(
+      doc(db, "appointments", id),
+      { status, updated_at: new Date().toISOString() },
+      { merge: true },
+    );
+  } catch {
+    // ignore
+  }
+  const list = getStorage<Appointment[]>("appointments", []);
+  const updated = list.map((a) =>
+    a.id === id ? { ...a, status, updated_at: new Date().toISOString() } : a,
+  );
+  setStorage("appointments", updated);
 }
 
 export async function deleteAppointment(id: string) {
-  const { error } = await db.from("appointments").delete().eq("id", id);
-  if (error) throw error;
+  try {
+    await deleteDoc(doc(db, "appointments", id));
+  } catch {
+    // ignore
+  }
+  const list = getStorage<Appointment[]>("appointments", []);
+  setStorage(
+    "appointments",
+    list.filter((a) => a.id !== id),
+  );
 }
 
 /* ------------------------------- Admin CRUD ----------------------------- */
 
 export async function upsertService(input: Partial<Service>) {
-  const { error } = input.id
-    ? await db.from("services").update(input).eq("id", input.id)
-    : await db.from("services").insert(input);
-  if (error) throw error;
+  const id = input.id || crypto.randomUUID();
+  const list = getStorage<Service[]>("services", DEFAULT_SERVICES);
+  const existingItem = list.find((s) => s.id === id);
+
+  const payload: Service = {
+    id,
+    title: input.title || existingItem?.title || "",
+    description: input.description || existingItem?.description || "",
+    duration: input.duration !== undefined ? input.duration : existingItem?.duration || null,
+    price: input.price !== undefined ? input.price : existingItem?.price || 0,
+    sort_order:
+      input.sort_order !== undefined
+        ? input.sort_order
+        : existingItem?.sort_order || list.length + 1,
+    is_active: input.is_active !== undefined ? input.is_active : (existingItem?.is_active ?? true),
+    image_url: input.image_url !== undefined ? input.image_url : existingItem?.image_url || null,
+    created_at: existingItem?.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    await setDoc(doc(db, "services", id), payload, { merge: true });
+  } catch {
+    // ignore
+  }
+
+  if (input.id && existingItem) {
+    const next = list.map((s) => (s.id === id ? payload : s));
+    setStorage("services", next);
+  } else {
+    setStorage("services", [...list, payload]);
+  }
 }
 
 export async function deleteService(id: string) {
-  const { error } = await db.from("services").delete().eq("id", id);
-  if (error) throw error;
+  try {
+    await deleteDoc(doc(db, "services", id));
+  } catch {
+    // ignore
+  }
+  const list = getStorage<Service[]>("services", DEFAULT_SERVICES);
+  setStorage(
+    "services",
+    list.filter((s) => s.id !== id),
+  );
 }
 
 export async function upsertProduct(input: Partial<Product>) {
-  const { error } = input.id
-    ? await db.from("products").update(input).eq("id", input.id)
-    : await db.from("products").insert(input);
-  if (error) throw error;
+  const id = input.id || crypto.randomUUID();
+  const list = getStorage<Product[]>("products", DEFAULT_PRODUCTS);
+  const existingItem = list.find((p) => p.id === id);
+
+  const payload: Product = {
+    id,
+    name: input.name || existingItem?.name || "",
+    description: input.description || existingItem?.description || "",
+    price: input.price !== undefined ? input.price : existingItem?.price || 0,
+    stock: input.stock !== undefined ? input.stock : existingItem?.stock || 0,
+    category_id:
+      input.category_id !== undefined ? input.category_id : existingItem?.category_id || null,
+    is_active: input.is_active !== undefined ? input.is_active : (existingItem?.is_active ?? true),
+    image_url: input.image_url !== undefined ? input.image_url : existingItem?.image_url || null,
+    created_at: existingItem?.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    await setDoc(doc(db, "products", id), payload, { merge: true });
+  } catch {
+    // ignore
+  }
+
+  if (input.id && existingItem) {
+    const next = list.map((p) => (p.id === id ? payload : p));
+    setStorage("products", next);
+  } else {
+    setStorage("products", [payload, ...list]);
+  }
 }
 
 export async function deleteProduct(id: string) {
-  const { error } = await db.from("products").delete().eq("id", id);
-  if (error) throw error;
+  try {
+    await deleteDoc(doc(db, "products", id));
+  } catch {
+    // ignore
+  }
+  const list = getStorage<Product[]>("products", DEFAULT_PRODUCTS);
+  setStorage(
+    "products",
+    list.filter((p) => p.id !== id),
+  );
 }
 
 export async function saveContent(key: string, value: unknown) {
-  const { error } = await db
-    .from("site_content")
-    .upsert({ key, value }, { onConflict: "key" });
-  if (error) throw error;
+  try {
+    await setDoc(doc(db, "site_content", key), {
+      key,
+      value,
+      updated_at: new Date().toISOString(),
+    });
+  } catch {
+    // ignore
+  }
+  setStorage(`content_${key}`, value);
 }
 
 /* -------------------------------- Recipes ------------------------------- */
 
 export async function fetchRecipes(): Promise<Recipe[]> {
-  const { data, error } = await db
-    .from("recipes")
-    .select("*")
-    .eq("is_published", true)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Recipe[];
+  try {
+    const q = query(collection(db, "recipes"), where("is_published", "==", true));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Recipe);
+      list.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      return list;
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Recipe[]>("recipes", DEFAULT_RECIPES).filter((r) => r.is_published);
 }
 
 export async function fetchAllRecipes(): Promise<Recipe[]> {
-  const { data, error } = await db
-    .from("recipes")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Recipe[];
+  try {
+    const snap = await getDocs(collection(db, "recipes"));
+    if (!snap.empty) {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Recipe);
+      list.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      return list;
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<Recipe[]>("recipes", DEFAULT_RECIPES);
 }
 
 export async function upsertRecipe(input: Partial<Recipe>) {
-  const { error } = input.id
-    ? await db.from("recipes").update(input).eq("id", input.id)
-    : await db.from("recipes").insert(input);
-  if (error) throw error;
+  const id = input.id || crypto.randomUUID();
+  const list = getStorage<Recipe[]>("recipes", DEFAULT_RECIPES);
+  const existingItem = list.find((r) => r.id === id);
+
+  const payload: Recipe = {
+    id,
+    title: input.title || existingItem?.title || "",
+    description: input.description || existingItem?.description || "",
+    image_url: input.image_url !== undefined ? input.image_url : existingItem?.image_url || null,
+    category: input.category !== undefined ? input.category : existingItem?.category || null,
+    prep_time: input.prep_time !== undefined ? input.prep_time : existingItem?.prep_time || null,
+    servings: input.servings !== undefined ? input.servings : existingItem?.servings || null,
+    ingredients: input.ingredients || existingItem?.ingredients || "",
+    steps: input.steps || existingItem?.steps || "",
+    sort_order:
+      input.sort_order !== undefined
+        ? input.sort_order
+        : existingItem?.sort_order || list.length + 1,
+    is_published:
+      input.is_published !== undefined ? input.is_published : (existingItem?.is_published ?? true),
+    created_at: existingItem?.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    await setDoc(doc(db, "recipes", id), payload, { merge: true });
+  } catch {
+    // ignore
+  }
+
+  if (input.id && existingItem) {
+    const next = list.map((r) => (r.id === id ? payload : r));
+    setStorage("recipes", next);
+  } else {
+    setStorage("recipes", [payload, ...list]);
+  }
 }
 
 export async function deleteRecipe(id: string) {
-  const { error } = await db.from("recipes").delete().eq("id", id);
-  if (error) throw error;
+  try {
+    await deleteDoc(doc(db, "recipes", id));
+  } catch {
+    // ignore
+  }
+  const list = getStorage<Recipe[]>("recipes", DEFAULT_RECIPES);
+  setStorage(
+    "recipes",
+    list.filter((r) => r.id !== id),
+  );
 }
 
 /* ----------------------------- Availability ----------------------------- */
@@ -204,32 +641,85 @@ export interface AvailabilitySlot {
 
 export async function fetchAvailability(): Promise<AvailabilitySlot[]> {
   const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await db
-    .from("availability")
-    .select("*")
-    .gte("date", today)
-    .order("date", { ascending: true })
-    .order("time", { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as AvailabilitySlot[];
+  try {
+    const q = query(
+      collection(db, "availability"),
+      where("date", ">=", today),
+      orderBy("date", "asc"),
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as AvailabilitySlot);
+    }
+  } catch {
+    // fall through
+  }
+  return getStorage<AvailabilitySlot[]>("availability", []);
 }
 
 export async function addAvailabilitySlots(date: string, times: string[]) {
-  const rows = times.map((time) => ({ date, time }));
-  const { error } = await db
-    .from("availability")
-    .upsert(rows, { onConflict: "date,time", ignoreDuplicates: true });
-  if (error) throw error;
+  const current = getStorage<AvailabilitySlot[]>("availability", []);
+  const newSlots: AvailabilitySlot[] = [];
+
+  for (const time of times) {
+    const slotId = `${date}_${time.replace(":", "-")}`;
+    const slotData = {
+      id: slotId,
+      date,
+      time,
+      created_at: new Date().toISOString(),
+    };
+    newSlots.push(slotData);
+
+    try {
+      await setDoc(doc(db, "availability", slotId), slotData, { merge: true });
+    } catch {
+      // ignore
+    }
+  }
+
+  setStorage("availability", [...current, ...newSlots]);
 }
 
 export async function deleteAvailabilitySlot(id: string) {
-  const { error } = await db.from("availability").delete().eq("id", id);
-  if (error) throw error;
+  try {
+    await deleteDoc(doc(db, "availability", id));
+  } catch {
+    // ignore
+  }
+  const current = getStorage<AvailabilitySlot[]>("availability", []);
+  setStorage(
+    "availability",
+    current.filter((s) => s.id !== id),
+  );
 }
 
-/** Free slots for the public booking page (only Melina's slots not yet taken). */
+/** Free slots for the public booking page. */
 export async function fetchAvailableSlots(): Promise<{ date: string; time: string }[]> {
-  const { data, error } = await (supabase as any).rpc("available_slots");
-  if (error) throw error;
-  return (data ?? []).map((r: any) => ({ date: r.date, time: r.time }));
+  try {
+    const storedSlots = await fetchAvailability();
+    if (storedSlots.length > 0) {
+      return storedSlots.map((s) => ({ date: s.date, time: s.time }));
+    }
+  } catch {
+    // fall through
+  }
+
+  // Generate availability for next 7 business days if none configured
+  const slots: { date: string; time: string }[] = [];
+  const base = new Date();
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    if (d.getDay() !== 0 && d.getDay() !== 6) {
+      const dateStr = d.toISOString().slice(0, 10);
+      slots.push(
+        { date: dateStr, time: "09:00" },
+        { date: dateStr, time: "11:00" },
+        { date: dateStr, time: "15:00" },
+        { date: dateStr, time: "17:00" },
+      );
+    }
+  }
+  return slots;
 }

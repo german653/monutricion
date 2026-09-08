@@ -19,8 +19,8 @@ function ConfirmationPage() {
         </div>
         <h1 className="font-display text-3xl tracking-tight sm:text-4xl">¡Turno confirmado!</h1>
         <p className="mt-3 text-muted-foreground">
-          Recibimos tu solicitud. Melina se pondrá en contacto con vos a la brevedad
-          para confirmar los detalles. ¡Gracias por confiar!
+          Recibimos tu solicitud. Melina se pondrá en contacto con vos a la brevedad para confirmar
+          los detalles. ¡Gracias por confiar!
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild className="rounded-full">

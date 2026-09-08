@@ -18,7 +18,10 @@ export const Route = createFileRoute("/contacto")({
   head: () => ({
     meta: [
       { title: "Contacto — Melina Oviedo Nutrición" },
-      { name: "description", content: "Contactá a Melina Oviedo por WhatsApp, correo o Instagram." },
+      {
+        name: "description",
+        content: "Contactá a Melina Oviedo por WhatsApp, correo o Instagram.",
+      },
       { property: "og:url", content: "/contacto" },
     ],
     links: [{ rel: "canonical", href: "/contacto" }],
@@ -26,7 +29,13 @@ export const Route = createFileRoute("/contacto")({
   loader: ({ context }) =>
     context.queryClient.ensureQueryData({ queryKey: ["contact"], queryFn: fetchContact }),
   component: ContactPage,
-  errorComponent: ({ error }) => <SiteLayout><div className="p-24 text-center" role="alert">{error.message}</div></SiteLayout>,
+  errorComponent: ({ error }) => (
+    <SiteLayout>
+      <div className="p-24 text-center" role="alert">
+        {error.message}
+      </div>
+    </SiteLayout>
+  ),
 });
 
 const schema = z.object({
@@ -53,9 +62,19 @@ function ContactPage() {
   };
 
   const items = [
-    { icon: MessageCircle, label: "WhatsApp", value: contact?.phone ?? "", href: buildWhatsappUrl("¡Hola Melina!", contact?.whatsapp) },
+    {
+      icon: MessageCircle,
+      label: "WhatsApp",
+      value: contact?.phone ?? "",
+      href: buildWhatsappUrl("¡Hola Melina!", contact?.whatsapp),
+    },
     { icon: Mail, label: "Correo", value: contact?.email ?? "", href: `mailto:${contact?.email}` },
-    { icon: Instagram, label: "Instagram", value: "@nutri_melioviedo", href: contact?.instagram ?? "#" },
+    {
+      icon: Instagram,
+      label: "Instagram",
+      value: "@nutri_melioviedo",
+      href: contact?.instagram ?? "#",
+    },
     { icon: MapPin, label: "Ubicación", value: contact?.address ?? "", href: undefined },
   ];
 
@@ -81,7 +100,9 @@ function ContactPage() {
                 </div>
               );
               return it.href ? (
-                <a key={it.label} href={it.href} target="_blank" rel="noopener noreferrer">{content}</a>
+                <a key={it.label} href={it.href} target="_blank" rel="noopener noreferrer">
+                  {content}
+                </a>
               ) : (
                 <div key={it.label}>{content}</div>
               );
@@ -89,7 +110,10 @@ function ContactPage() {
           </Reveal>
 
           <Reveal delay={0.1}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 rounded-3xl border border-border bg-card p-7 shadow-soft">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-5 rounded-3xl border border-border bg-card p-7 shadow-soft"
+            >
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre</Label>
                 <Input id="name" className="rounded-xl" {...register("name")} />
@@ -103,7 +127,9 @@ function ContactPage() {
               <div className="space-y-2">
                 <Label htmlFor="message">Mensaje</Label>
                 <Textarea id="message" rows={5} className="rounded-xl" {...register("message")} />
-                {errors.message && <p className="text-sm text-destructive">{errors.message.message}</p>}
+                {errors.message && (
+                  <p className="text-sm text-destructive">{errors.message.message}</p>
+                )}
               </div>
               <Button type="submit" size="lg" className="w-full rounded-full">
                 <Phone className="mr-2 h-4 w-4" /> Enviar por WhatsApp

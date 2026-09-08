@@ -11,7 +11,11 @@ export const Route = createFileRoute("/servicios")({
   head: () => ({
     meta: [
       { title: "Servicios — Melina Oviedo Nutrición" },
-      { name: "description", content: "Consultas nutricionales, seguimiento y nutrición deportiva. Elegí tu plan personalizado." },
+      {
+        name: "description",
+        content:
+          "Consultas nutricionales, seguimiento y nutrición deportiva. Elegí tu plan personalizado.",
+      },
       { property: "og:title", content: "Servicios — Melina Oviedo" },
       { property: "og:url", content: "/servicios" },
     ],
@@ -20,7 +24,13 @@ export const Route = createFileRoute("/servicios")({
   loader: ({ context }) =>
     context.queryClient.ensureQueryData({ queryKey: ["services"], queryFn: fetchServices }),
   component: ServicesPage,
-  errorComponent: ({ error }) => <SiteLayout><div className="p-24 text-center" role="alert">{error.message}</div></SiteLayout>,
+  errorComponent: ({ error }) => (
+    <SiteLayout>
+      <div className="p-24 text-center" role="alert">
+        {error.message}
+      </div>
+    </SiteLayout>
+  ),
 });
 
 function ServicesPage() {
@@ -40,7 +50,12 @@ function ServicesPage() {
             <Reveal key={s.id} delay={i * 0.06}>
               <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-transform hover:-translate-y-1">
                 {s.image_url && (
-                  <img src={s.image_url} alt={s.title} loading="lazy" className="h-44 w-full object-cover" />
+                  <img
+                    src={s.image_url}
+                    alt={s.title}
+                    loading="lazy"
+                    className="h-44 w-full object-cover"
+                  />
                 )}
                 <div className="flex flex-1 flex-col p-7">
                   <h2 className="text-xl font-semibold">{s.title}</h2>
@@ -51,7 +66,9 @@ function ServicesPage() {
                     </span>
                   )}
                   <div className="mt-4 flex items-center justify-between">
-                    <span className="font-display text-2xl font-semibold text-primary">{formatPrice(s.price)}</span>
+                    <span className="font-display text-2xl font-semibold text-primary">
+                      {formatPrice(s.price)}
+                    </span>
                     <Button asChild size="sm" className="rounded-full">
                       <Link to="/reservar">Reservar</Link>
                     </Button>

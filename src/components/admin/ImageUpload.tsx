@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ImagePlus, Loader2, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Cloud, ImagePlus, Loader2, X } from "lucide-react";
+import { uploadToCloudinary } from "@/integrations/cloudinary/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,15 @@ import { Label } from "@/components/ui/label";
 interface ImageUploadProps {
   value: string | null | undefined;
   onChange: (url: string | null) => void;
-  folder: string;
+  folder?: string;
   label?: string;
 }
 
-export function ImageUpload({ value, onChange, folder, label = "Imagen" }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, label = "Imagen" }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+
+  const isCloudinaryUrl = value?.includes("cloudinary.com");
 
   const pick = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -28,17 +30,16 @@ export function ImageUpload({ value, onChange, folder, label = "Imagen" }: Image
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${folder}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("media").upload(path, file, {
-        cacheControl: "31536000",
-        contentType: file.type,
-      });
-      if (error) throw error;
-      onChange(`/api/public/media/${path}`);
-      toast.success("Imagen subida");
-    } catch {
-      toast.error("No se pudo subir la imagen");
+      const url = await uploadToCloudinary(file);
+      onChange(url);
+      if (url.includes("cloudinary.com")) {
+        toast.success("Imagen subida a Cloudinary con éxito");
+      } else {
+        toast.success("Imagen cargada correctamente");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "No se pudo subir la imagen";
+      toast.error(message);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -47,7 +48,14 @@ export function ImageUpload({ value, onChange, folder, label = "Imagen" }: Image
 
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <div className="flex items-center justify-between">
+        <Label>{label}</Label>
+        {isCloudinaryUrl && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <Cloud className="h-3 w-3" /> Cloudinary
+          </span>
+        )}
+      </div>
 
       {value ? (
         <div className="relative w-full overflow-hidden rounded-2xl border border-border">
@@ -75,7 +83,7 @@ export function ImageUpload({ value, onChange, folder, label = "Imagen" }: Image
           ) : (
             <>
               <ImagePlus className="h-5 w-5" />
-              Subir imagen desde tu dispositivo
+              Subir imagen (Cloudinary / Dispositivo)
             </>
           )}
         </button>
@@ -95,7 +103,7 @@ export function ImageUpload({ value, onChange, folder, label = "Imagen" }: Image
       <Input
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        placeholder="…o pegá una URL de imagen"
+        placeholder="…o pegá una URL de Cloudinary / externa"
       />
     </div>
   );

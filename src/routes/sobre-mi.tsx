@@ -4,7 +4,7 @@ import { Award, Heart, Leaf, Target } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Reveal } from "@/components/Reveal";
 import { fetchAbout, fetchFaq } from "@/lib/queries";
-import aboutImg from "@/assets/about-food.jpg";
+import aboutImg from "@/assets/about-melina.jpg";
 import {
   Accordion,
   AccordionContent,
@@ -16,7 +16,10 @@ export const Route = createFileRoute("/sobre-mi")({
   head: () => ({
     meta: [
       { title: "Sobre mí — Melina Oviedo Nutrición" },
-      { name: "description", content: "Conocé la historia, experiencia y valores de la nutricionista Melina Oviedo." },
+      {
+        name: "description",
+        content: "Conocé la historia, experiencia y valores de la nutricionista Melina Oviedo.",
+      },
       { property: "og:title", content: "Sobre mí — Melina Oviedo" },
       { property: "og:url", content: "/sobre-mi" },
     ],
@@ -29,7 +32,13 @@ export const Route = createFileRoute("/sobre-mi")({
     ]);
   },
   component: AboutPage,
-  errorComponent: ({ error }) => <SiteLayout><div className="p-24 text-center" role="alert">{error.message}</div></SiteLayout>,
+  errorComponent: ({ error }) => (
+    <SiteLayout>
+      <div className="p-24 text-center" role="alert">
+        {error.message}
+      </div>
+    </SiteLayout>
+  ),
 });
 
 const highlights = [
@@ -46,15 +55,25 @@ function AboutPage() {
       <section className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24 lg:px-8">
         <Reveal>
           <div className="overflow-hidden rounded-[2.5rem] shadow-card">
-            <img src={aboutImg} alt="Melina Oviedo" width={1200} height={1200} className="h-full w-full object-cover" />
+            <img
+              src={about?.image_url || aboutImg}
+              alt="Melina Oviedo"
+              width={1200}
+              height={1200}
+              className="h-full w-full object-cover"
+            />
           </div>
         </Reveal>
         <Reveal delay={0.1} className="space-y-5">
           <span className="inline-flex items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground">
             <Leaf className="h-4 w-4" /> Sobre mí
           </span>
-          <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{about?.title ?? "Sobre mí"}</h1>
-          <p className="whitespace-pre-line text-muted-foreground">{about?.body}</p>
+          <h1 className="font-display text-4xl tracking-tight sm:text-5xl">
+            {about?.title ?? "Hola, soy Meli Oviedo"}
+          </h1>
+          <div className="space-y-4 text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+            {about?.body}
+          </div>
           <div className="grid gap-4 pt-2 sm:grid-cols-2">
             {highlights.map((h) => (
               <div key={h.key} className="rounded-3xl border border-border bg-card p-5 shadow-soft">
@@ -71,7 +90,9 @@ function AboutPage() {
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
           <Reveal className="mb-8 text-center">
             <Heart className="mx-auto mb-3 h-8 w-8 text-primary" />
-            <h2 className="font-display text-3xl tracking-tight sm:text-4xl">Preguntas frecuentes</h2>
+            <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
+              Preguntas frecuentes
+            </h2>
           </Reveal>
           <Reveal>
             <Accordion type="single" collapsible className="w-full">

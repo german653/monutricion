@@ -12,10 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
-
-const WELCOME =
-  "¡Bienvenido! Esperamos que encuentres toda la información que buscás.";
+import { Loader2, KeyRound } from "lucide-react";
 
 export function AdminLoginModal({
   open,
@@ -24,21 +21,28 @@ export function AdminLoginModal({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const softExit = async () => {
-    await supabase.auth.signOut().catch(() => {});
-    onOpenChange(false);
-    setEmail("");
-    setPassword("");
-    toast(WELCOME);
-    navigate({ to: "/" });
+  const handlePasswordLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.trim() === "1234") {
+      localStorage.setItem("admin_authenticated", "true");
+      window.dispatchEvent(new Event("admin-auth-change"));
+      toast.success("¡Bienvenida, Melina!");
+      onOpenChange(false);
+      setPassword("");
+      navigate({ to: "/admin" });
+      return;
+    }
+
+    toast.error("Contraseña incorrecta");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSupabaseLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -47,9 +51,11 @@ export function AdminLoginModal({
         password,
       });
       if (error || !data.user) {
-        await softExit();
+        toast.error("Credenciales inválidas");
         return;
       }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const db = supabase as unknown as { from: (t: string) => any };
       const { data: role } = await db
         .from("user_roles")
@@ -59,13 +65,17 @@ export function AdminLoginModal({
         .maybeSingle();
 
       if (!role) {
-        await softExit();
+        toast.error("No tienes permisos de administrador");
         return;
       }
 
+      localStorage.setItem("admin_authenticated", "true");
+      window.dispatchEvent(new Event("admin-auth-change"));
+      toast.success("¡Bienvenida, Melina!");
       onOpenChange(false);
-      toast.success("¡Hola de nuevo, Melina!");
       navigate({ to: "/admin" });
+    } catch {
+      toast.error("Error al iniciar sesión");
     } finally {
       setLoading(false);
     }
@@ -75,41 +85,86 @@ export function AdminLoginModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md rounded-3xl">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Acceso</DialogTitle>
-          <DialogDescription>
-            Ingresá tus datos para continuar.
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <KeyRound className="h-6 w-6" />
+          </div>
+          <DialogTitle className="text-center font-display text-2xl">
+            Acceso Administrador
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            Ingresá la contraseña para gestionar el sitio.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div className="space-y-2">
-            <Label htmlFor="admin-email">Correo</Label>
-            <Input
-              id="admin-email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="rounded-xl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="admin-password">Contraseña</Label>
-            <Input
-              id="admin-password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="rounded-xl"
-            />
-          </div>
-          <Button type="submit" className="w-full rounded-xl" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Ingresar
-          </Button>
-        </form>
+
+        {!showEmailLogin ? (
+          <form onSubmit={handlePasswordLogin} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Contraseña</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                autoFocus
+                placeholder="••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="rounded-xl text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button type="submit" className="w-full rounded-xl">
+              Ingresar al Panel
+            </Button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setShowEmailLogin(true)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                ¿Acceder con email y contraseña de Supabase?
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleSupabaseLogin} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="admin-email">Correo</Label>
+              <Input
+                id="admin-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-pass">Contraseña</Label>
+              <Input
+                id="admin-pass"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="rounded-xl"
+              />
+            </div>
+            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Ingresar
+            </Button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setShowEmailLogin(false)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Volver a acceso con contraseña rápida
+              </button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

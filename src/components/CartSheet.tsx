@@ -1,13 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2, ShoppingBag, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/features/cart/cart-store";
 import { formatPrice, buildWhatsappUrl } from "@/lib/format";
@@ -47,7 +41,12 @@ export function CartSheet({
               <ShoppingBag className="h-8 w-8 text-accent-foreground" />
             </div>
             <p className="text-muted-foreground">Tu carrito está vacío.</p>
-            <Button asChild variant="secondary" className="rounded-full" onClick={() => onOpenChange(false)}>
+            <Button
+              asChild
+              variant="secondary"
+              className="rounded-full"
+              onClick={() => onOpenChange(false)}
+            >
               <Link to="/tienda">Ver la tienda</Link>
             </Button>
           </div>
@@ -58,7 +57,11 @@ export function CartSheet({
                 <div key={item.id} className="flex gap-3 rounded-2xl border border-border p-3">
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
                     {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" />
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                         <ShoppingBag className="h-5 w-5" />
@@ -94,7 +97,9 @@ export function CartSheet({
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <span className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</span>
+                      <span className="text-sm font-semibold">
+                        {formatPrice(item.price * item.quantity)}
+                      </span>
                     </div>
                   </div>
                 </div>

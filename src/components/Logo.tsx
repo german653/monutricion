@@ -1,24 +1,39 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/logo-mo.png.asset.json";
+import { useQuery } from "@tanstack/react-query";
+import logoFallback from "@/assets/logo-mo.png.asset.json";
+import { fetchBranding } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 export function Logo({ className, showText = true }: { className?: string; showText?: boolean }) {
+  const { data: branding } = useQuery({
+    queryKey: ["branding"],
+    queryFn: fetchBranding,
+  });
+
+  const logoSrc = branding?.logo_url || logoFallback.url;
+  const brandName = branding?.brand_name || "Melina Oviedo";
+  const tagline = branding?.tagline || "Nutrición y Salud";
+
   return (
-    <Link to="/" className={cn("flex items-center gap-3", className)} aria-label="MO Nutrición y Salud — Inicio">
+    <Link
+      to="/"
+      className={cn("flex items-center gap-3 group", className)}
+      aria-label={`${brandName} — ${tagline}`}
+    >
       <img
-        src={logo.url}
-        alt="Logo MO Nutrición y Salud"
+        src={logoSrc}
+        alt={`Logo ${brandName}`}
         width={44}
         height={44}
-        className="h-11 w-11 rounded-full object-cover shadow-soft"
+        className="h-11 w-11 rounded-full object-cover shadow-soft transition-transform duration-200 group-hover:scale-105"
       />
       {showText && (
         <span className="flex flex-col leading-none">
           <span className="font-display text-lg font-semibold tracking-tight text-foreground">
-            Melina Oviedo
+            {brandName}
           </span>
           <span className="text-[0.68rem] uppercase tracking-[0.22em] text-muted-foreground">
-            Nutrición y Salud
+            {tagline}
           </span>
         </span>
       )}

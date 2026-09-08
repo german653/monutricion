@@ -102,7 +102,11 @@ export function RecipeManager() {
           >
             <div className="flex min-w-0 items-center gap-3">
               {r.image_url && (
-                <img src={r.image_url} alt="" className="h-10 w-10 shrink-0 rounded-xl object-cover" />
+                <img
+                  src={r.image_url}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-xl object-cover"
+                />
               )}
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
