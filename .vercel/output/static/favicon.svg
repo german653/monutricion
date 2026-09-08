@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="moGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b694b" />
+      <stop offset="100%" stop-color="#244530" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8bb796" />
+      <stop offset="100%" stop-color="#d8ebd9" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Squircle -->
+  <rect width="64" height="64" rx="18" fill="url(#moGrad)" />
+  
+  <!-- Subtle inner border -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="none" stroke="#689a74" stroke-width="1.5" stroke-opacity="0.3" />
+
+  <!-- Botanical Sprout / Leaf Motif -->
+  <path d="M32 15 C32 15, 46 17, 46 31 C46 41, 35 45, 32 49 C29 45, 18 41, 18 31 C18 17, 32 15, 32 15 Z" fill="url(#leafGrad)" opacity="0.95" />
+  <path d="M32 20 L32 46" stroke="#244530" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+  <path d="M32 30 C35 28, 39 29, 41 31" stroke="#244530" stroke-width="1.5" stroke-linecap="round" opacity="0.7" />
+  <path d="M32 36 C29 34, 25 35, 23 37" stroke="#244530" stroke-width="1.5" stroke-linecap="round" opacity="0.7" />
+
+  <!-- MO Letters at the bottom -->
+  <text x="32" y="58" font-family="'Fraunces', Georgia, serif" font-size="10" font-weight="700" fill="#f4faf5" text-anchor="middle" letter-spacing="1.5">MO</text>
+</svg>
