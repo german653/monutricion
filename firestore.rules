@@ -50,6 +50,12 @@ service cloud.firestore {
       allow update, delete: if true;
     }
 
+    // Atomic locks for slots to prevent double-booking
+    match /booked_slots/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     match /{document=**} {
       allow read, write: if true;
     }

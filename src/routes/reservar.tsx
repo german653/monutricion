@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, MapPin, Navigation, ExternalLink } from "lucide-react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Reveal } from "@/components/Reveal";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,7 @@ import {
   fetchAvailableSlots,
   createAppointment,
   fetchConsultationLocation,
+  SlotCollisionError,
 } from "@/lib/queries";
 
 export const Route = createFileRoute("/reservar")({
@@ -82,6 +85,46 @@ function BookingPage() {
     queryFn: fetchConsultationLocation,
   });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Listen to Firestore changes in real-time so taken slots disappear immediately for all users
+  useEffect(() => {
+    let unsubSlots: (() => void) | undefined;
+    let unsubApps: (() => void) | undefined;
+
+    try {
+      unsubSlots = onSnapshot(
+        collection(db, "booked_slots"),
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["available-slots"] });
+        },
+        () => {
+          // gracefully ignore snapshot errors
+        },
+      );
+    } catch {
+      // ignore
+    }
+
+    try {
+      unsubApps = onSnapshot(
+        collection(db, "appointments"),
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["available-slots"] });
+        },
+        () => {
+          // gracefully ignore snapshot errors
+        },
+      );
+    } catch {
+      // ignore
+    }
+
+    return () => {
+      if (unsubSlots) unsubSlots();
+      if (unsubApps) unsubApps();
+    };
+  }, [queryClient]);
 
   const slotsByDate = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -100,8 +143,25 @@ function BookingPage() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
+
+  const selectedTime = watch("time");
+
+  // Real-time conflict protection: If another user reserves the currently selected time, warn immediately
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      const availableTimes = slotsByDate.get(selectedDate) ?? [];
+      if (availableTimes.length > 0 && !availableTimes.includes(selectedTime)) {
+        setValue("time", "");
+        toast.warning(
+          `El horario de las ${selectedTime} hs para el día elegido acaba de ser reservado por otra persona. Por favor seleccioná otro horario.`,
+          { duration: 7000 },
+        );
+      }
+    }
+  }, [slotsByDate, selectedDate, selectedTime, setValue]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -117,10 +177,25 @@ function BookingPage() {
         time: values.time,
         notes: values.notes ?? null,
       });
+      await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       toast.success("¡Tu turno fue reservado con éxito!");
       navigate({ to: "/reservar/confirmacion" });
-    } catch {
-      toast.error("No pudimos registrar tu turno. Intentá nuevamente.");
+    } catch (err: unknown) {
+      await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
+      const errorObj = err as { name?: string; message?: string } | undefined;
+      if (
+        err instanceof SlotCollisionError ||
+        errorObj?.name === "SlotCollisionError" ||
+        errorObj?.message?.includes("reservado")
+      ) {
+        setValue("time", "");
+        toast.error(
+          "¡Ese horario acaba de ser reservado por otra persona! Por favor seleccioná otro horario disponible.",
+          { duration: 7000 },
+        );
+      } else {
+        toast.error("No pudimos registrar tu turno. Intentá nuevamente.");
+      }
     }
   };
 
@@ -158,9 +233,7 @@ function BookingPage() {
                       {location.address || "Córdoba, Argentina"}
                     </p>
                     {location.notes && (
-                      <p className="mt-1.5 text-xs text-muted-foreground">
-                        {location.notes}
-                      </p>
+                      <p className="mt-1.5 text-xs text-muted-foreground">{location.notes}</p>
                     )}
                   </div>
                 </div>
@@ -251,6 +324,17 @@ function BookingPage() {
                   <p className="text-sm text-destructive">{errors.service_id.message}</p>
                 )}
               </div>
+              <div className="flex items-center justify-between border-b border-border/60 pb-3 pt-1 text-xs">
+                <span className="text-muted-foreground font-medium">Seleccioná fecha y hora</span>
+                <span className="inline-flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                  </span>
+                  Disponibilidad en vivo
+                </span>
+              </div>
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="date">Día disponible</Label>
@@ -282,21 +366,31 @@ function BookingPage() {
                     id="time"
                     className={selectClass}
                     defaultValue=""
-                    disabled={!selectedDate}
+                    disabled={!selectedDate || times.length === 0}
                     {...register("time")}
                   >
                     <option value="" disabled>
-                      {selectedDate ? "Elegí un horario" : "Elegí un día primero"}
+                      {!selectedDate
+                        ? "Elegí un día primero"
+                        : times.length === 0
+                          ? "Sin horarios disponibles"
+                          : "Elegí un horario"}
                     </option>
                     {times.map((t) => (
                       <option key={t} value={t}>
-                        {t}
+                        {t} hs
                       </option>
                     ))}
                   </select>
                   {errors.time && <p className="text-sm text-destructive">{errors.time.message}</p>}
                 </div>
               </div>
+              {selectedDate && times.length === 0 && (
+                <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-700 dark:text-amber-300">
+                  Todos los turnos de este día ya han sido reservados. Por favor seleccioná otra
+                  fecha disponible en el calendario.
+                </p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="notes">Observaciones</Label>
                 <Textarea id="notes" className="rounded-xl" rows={3} {...register("notes")} />

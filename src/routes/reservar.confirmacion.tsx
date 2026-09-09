@@ -45,16 +45,12 @@ function ConfirmationPage() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-primary">
                   Lugar de atención
                 </span>
-                <p className="font-semibold text-foreground">
-                  {location.title || "Gimnasio 653"}
-                </p>
+                <p className="font-semibold text-foreground">{location.title || "Gimnasio 653"}</p>
                 <p className="text-sm text-foreground/80 font-medium">
                   {location.address || "Córdoba, Argentina"}
                 </p>
                 {location.notes && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {location.notes}
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{location.notes}</p>
                 )}
                 {(location.google_maps_url || location.address) && (
                   <div className="mt-3">
@@ -90,4 +86,3 @@ function ConfirmationPage() {
     </SiteLayout>
   );
 }
-

@@ -17,5 +17,13 @@ export default defineConfig({
     vercel: {
       entryFormat: "node",
     },
+    routeRules: {
+      "/": { headers: { "cache-control": "s-maxage=120, stale-while-revalidate=86400" } },
+      "/servicios": { headers: { "cache-control": "s-maxage=120, stale-while-revalidate=86400" } },
+      "/sobre-mi": { headers: { "cache-control": "s-maxage=120, stale-while-revalidate=86400" } },
+      "/recetas": { headers: { "cache-control": "s-maxage=120, stale-while-revalidate=86400" } },
+      "/contacto": { headers: { "cache-control": "s-maxage=120, stale-while-revalidate=86400" } },
+      "/tienda": { headers: { "cache-control": "s-maxage=120, stale-while-revalidate=86400" } },
+    },
   },
 });

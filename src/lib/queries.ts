@@ -8,6 +8,7 @@ import {
   query,
   where,
   orderBy,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import type {
@@ -368,6 +369,13 @@ export const fetchBranding = () => fetchContent<BrandingContent>("branding", DEF
 
 /* ----------------------------- Appointments ----------------------------- */
 
+export class SlotCollisionError extends Error {
+  constructor(message = "Este horario ya ha sido reservado por otra persona.") {
+    super(message);
+    this.name = "SlotCollisionError";
+  }
+}
+
 export interface NewAppointment {
   first_name: string;
   last_name: string;
@@ -381,23 +389,93 @@ export interface NewAppointment {
 }
 
 export async function createAppointment(input: NewAppointment): Promise<void> {
+  const cleanTime = input.time.trim();
+  const cleanDate = input.date.trim();
+  const slotKey = `${cleanDate}_${cleanTime.replace(":", "-")}`;
+  const slotDocRef = doc(db, "booked_slots", slotKey);
   const newId = crypto.randomUUID();
+
   const newApp: Appointment = {
     ...input,
+    date: cleanDate,
+    time: cleanTime,
     id: newId,
     status: "pendiente",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
-  try {
-    await setDoc(doc(db, "appointments", newId), newApp);
-  } catch {
-    // ignore
+  // 1. First verify if local cache already has a conflict (for immediate responsiveness)
+  const existingLocal = getStorage<Appointment[]>("appointments", []);
+  const localCollision = existingLocal.find(
+    (a) => a.date === cleanDate && a.time === cleanTime && a.status !== "cancelado",
+  );
+  if (localCollision) {
+    throw new SlotCollisionError(
+      "Este horario ya fue reservado. Por favor elegí otro horario disponible.",
+    );
   }
 
-  const existing = getStorage<Appointment[]>("appointments", []);
-  setStorage("appointments", [newApp, ...existing]);
+  // 2. Perform atomic reservation in Firestore via transaction
+  let firestoreSucceeded = false;
+  try {
+    await runTransaction(db, async (transaction) => {
+      // Check atomic slot lock
+      const slotSnap = await transaction.get(slotDocRef);
+      if (slotSnap.exists()) {
+        const slotData = slotSnap.data();
+        if (slotData && slotData.status !== "cancelado") {
+          throw new SlotCollisionError("Este horario acaba de ser reservado por otra persona.");
+        }
+      }
+
+      // Write slot lock and new appointment atomically
+      transaction.set(slotDocRef, {
+        id: slotKey,
+        date: cleanDate,
+        time: cleanTime,
+        appointment_id: newId,
+        status: "pendiente",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      const appDocRef = doc(db, "appointments", newId);
+      transaction.set(appDocRef, newApp);
+    });
+    firestoreSucceeded = true;
+  } catch (err: unknown) {
+    const errorObj = err as { name?: string; message?: string } | undefined;
+    if (
+      err instanceof SlotCollisionError ||
+      errorObj?.name === "SlotCollisionError" ||
+      errorObj?.message?.includes("reservado") ||
+      errorObj?.message?.includes("SLOT_ALREADY_TAKEN")
+    ) {
+      throw new SlotCollisionError(
+        "Este horario acaba de ser reservado por otra persona. Por favor elegí otro horario.",
+      );
+    }
+    // If transaction failed due to network/offline mode, fallback to setDoc
+    if (!firestoreSucceeded) {
+      try {
+        await setDoc(slotDocRef, {
+          id: slotKey,
+          date: cleanDate,
+          time: cleanTime,
+          appointment_id: newId,
+          status: "pendiente",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        await setDoc(doc(db, "appointments", newId), newApp);
+      } catch {
+        // Continue with local storage if network is offline
+      }
+    }
+  }
+
+  setStorage("appointments", [newApp, ...existingLocal]);
 }
 
 export async function fetchAppointments(): Promise<Appointment[]> {
@@ -415,28 +493,63 @@ export async function fetchAppointments(): Promise<Appointment[]> {
 }
 
 export async function updateAppointmentStatus(id: string, status: AppointmentStatus) {
+  let appDate: string | undefined;
+  let appTime: string | undefined;
+
   try {
+    const appDoc = await getDoc(doc(db, "appointments", id));
+    if (appDoc.exists()) {
+      const d = appDoc.data() as Appointment;
+      appDate = d.date;
+      appTime = d.time;
+    }
+
     await setDoc(
       doc(db, "appointments", id),
       { status, updated_at: new Date().toISOString() },
       { merge: true },
     );
+
+    // Keep booked_slots lock in sync
+    if (appDate && appTime) {
+      const slotKey = `${appDate}_${appTime.replace(":", "-")}`;
+      await setDoc(
+        doc(db, "booked_slots", slotKey),
+        { status, updated_at: new Date().toISOString() },
+        { merge: true },
+      );
+    }
   } catch {
     // ignore
   }
+
   const list = getStorage<Appointment[]>("appointments", []);
-  const updated = list.map((a) =>
-    a.id === id ? { ...a, status, updated_at: new Date().toISOString() } : a,
-  );
+  const updated = list.map((a) => {
+    if (a.id === id) {
+      appDate = a.date;
+      appTime = a.time;
+      return { ...a, status, updated_at: new Date().toISOString() };
+    }
+    return a;
+  });
   setStorage("appointments", updated);
 }
 
 export async function deleteAppointment(id: string) {
   try {
+    const appDoc = await getDoc(doc(db, "appointments", id));
+    if (appDoc.exists()) {
+      const d = appDoc.data() as Appointment;
+      if (d.date && d.time) {
+        const slotKey = `${d.date}_${d.time.replace(":", "-")}`;
+        await deleteDoc(doc(db, "booked_slots", slotKey));
+      }
+    }
     await deleteDoc(doc(db, "appointments", id));
   } catch {
     // ignore
   }
+
   const list = getStorage<Appointment[]>("appointments", []);
   setStorage(
     "appointments",
@@ -700,34 +813,92 @@ export async function deleteAvailabilitySlot(id: string) {
   );
 }
 
-/** Free slots for the public booking page. */
+function isSlotInFuture(dateStr: string, timeStr: string): boolean {
+  try {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const [year, month, day] = dateStr.split("-").map(Number);
+    // Add 10-minute margin so users don't book a slot that has already started or is within 10 min
+    const slotDate = new Date(year, month - 1, day, hours, minutes || 0, 0);
+    return slotDate.getTime() > Date.now() + 10 * 60 * 1000;
+  } catch {
+    return true;
+  }
+}
+
+/** Free slots for the public booking page. Excludes occupied appointments, slot locks, and past dates. */
 export async function fetchAvailableSlots(): Promise<{ date: string; time: string }[]> {
+  let rawSlots: { date: string; time: string }[] = [];
+
   try {
     const storedSlots = await fetchAvailability();
     if (storedSlots.length > 0) {
-      return storedSlots.map((s) => ({ date: s.date, time: s.time }));
+      rawSlots = storedSlots.map((s) => ({ date: s.date, time: s.time }));
     }
   } catch {
     // fall through
   }
 
-  // Generate availability for next 7 business days if none configured
-  const slots: { date: string; time: string }[] = [];
-  const base = new Date();
-  for (let i = 1; i <= 7; i++) {
-    const d = new Date(base);
-    d.setDate(base.getDate() + i);
-    if (d.getDay() !== 0 && d.getDay() !== 6) {
-      const dateStr = d.toISOString().slice(0, 10);
-      slots.push(
-        { date: dateStr, time: "09:00" },
-        { date: dateStr, time: "11:00" },
-        { date: dateStr, time: "15:00" },
-        { date: dateStr, time: "17:00" },
-      );
+  // Generate availability for upcoming business days if none configured
+  if (rawSlots.length === 0) {
+    const base = new Date();
+    for (let i = 1; i <= 14; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      if (d.getDay() !== 0 && d.getDay() !== 6) {
+        const dateStr = d.toISOString().slice(0, 10);
+        rawSlots.push(
+          { date: dateStr, time: "09:00" },
+          { date: dateStr, time: "11:00" },
+          { date: dateStr, time: "15:00" },
+          { date: dateStr, time: "17:00" },
+        );
+      }
     }
   }
-  return slots;
+
+  // Collect all occupied slots from Firestore & LocalStorage
+  const occupiedKeys = new Set<string>();
+
+  try {
+    const appsSnap = await getDocs(collection(db, "appointments"));
+    appsSnap.forEach((d) => {
+      const data = d.data() as Appointment;
+      if (data.date && data.time && data.status !== "cancelado") {
+        occupiedKeys.add(`${data.date.trim()}___${data.time.trim()}`);
+      }
+    });
+  } catch {
+    // ignore
+  }
+
+  try {
+    const locksSnap = await getDocs(collection(db, "booked_slots"));
+    locksSnap.forEach((d) => {
+      const data = d.data();
+      if (data.date && data.time && data.status !== "cancelado") {
+        occupiedKeys.add(`${data.date.trim()}___${data.time.trim()}`);
+      }
+    });
+  } catch {
+    // ignore
+  }
+
+  // Local storage check
+  const localApps = getStorage<Appointment[]>("appointments", []);
+  for (const a of localApps) {
+    if (a.date && a.time && a.status !== "cancelado") {
+      occupiedKeys.add(`${a.date.trim()}___${a.time.trim()}`);
+    }
+  }
+
+  // Filter out occupied slots and past slots
+  const available = rawSlots.filter((slot) => {
+    const key = `${slot.date.trim()}___${slot.time.trim()}`;
+    if (occupiedKeys.has(key)) return false;
+    return isSlotInFuture(slot.date, slot.time);
+  });
+
+  return available;
 }
 
 /* -------------------- Consultation Location & Schedule -------------------- */
