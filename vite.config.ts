@@ -13,6 +13,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   nitro: {
+    preset: process.env.VERCEL ? "vercel" : undefined,
     vercel: {
       entryFormat: "node",
     },
