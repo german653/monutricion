@@ -104,3 +104,10 @@ export interface BrandingContent {
   brand_name?: string;
   tagline?: string;
 }
+
+export interface ConsultationLocation {
+  title: string;
+  address: string;
+  notes?: string;
+  google_maps_url?: string;
+}

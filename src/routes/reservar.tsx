@@ -5,14 +5,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin, Navigation, ExternalLink } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Reveal } from "@/components/Reveal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { fetchServices, fetchAvailableSlots, createAppointment } from "@/lib/queries";
+import {
+  fetchServices,
+  fetchAvailableSlots,
+  createAppointment,
+  fetchConsultationLocation,
+} from "@/lib/queries";
 
 export const Route = createFileRoute("/reservar")({
   head: () => ({
@@ -32,6 +37,10 @@ export const Route = createFileRoute("/reservar")({
       context.queryClient.ensureQueryData({
         queryKey: ["available-slots"],
         queryFn: fetchAvailableSlots,
+      }),
+      context.queryClient.ensureQueryData({
+        queryKey: ["consultation-location"],
+        queryFn: fetchConsultationLocation,
       }),
     ]),
   component: BookingPage,
@@ -67,6 +76,10 @@ function BookingPage() {
   const { data: slots } = useSuspenseQuery({
     queryKey: ["available-slots"],
     queryFn: fetchAvailableSlots,
+  });
+  const { data: location } = useSuspenseQuery({
+    queryKey: ["consultation-location"],
+    queryFn: fetchConsultationLocation,
   });
   const navigate = useNavigate();
 
@@ -124,6 +137,54 @@ function BookingPage() {
             Completá el formulario y me pondré en contacto con vos.
           </p>
         </Reveal>
+
+        {/* Lugar de atención presencial */}
+        {location && (location.title || location.address) && (
+          <Reveal className="mb-8">
+            <div className="rounded-3xl border border-primary/20 bg-accent/30 p-6 shadow-soft transition-all">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                    <MapPin className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                      Lugar de atención presencial
+                    </span>
+                    <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+                      {location.title || "Gimnasio 653"}
+                    </h2>
+                    <p className="mt-0.5 text-sm font-medium text-foreground/80">
+                      {location.address || "Córdoba, Argentina"}
+                    </p>
+                    {location.notes && (
+                      <p className="mt-1.5 text-xs text-muted-foreground">
+                        {location.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {(location.google_maps_url || location.address) && (
+                  <a
+                    href={
+                      location.google_maps_url ||
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.title} ${location.address}`)}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-xs transition-colors hover:bg-accent sm:self-center"
+                  >
+                    <Navigation className="h-3.5 w-3.5 text-primary" />
+                    <span>Ver cómo llegar</span>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                  </a>
+                )}
+              </div>
+            </div>
+          </Reveal>
+        )}
+
         <Reveal>
           {dates.length === 0 ? (
             <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-soft">

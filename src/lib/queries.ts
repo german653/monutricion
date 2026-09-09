@@ -16,6 +16,7 @@ import type {
   AppointmentStatus,
   BrandingContent,
   Category,
+  ConsultationLocation,
   ContactContent,
   Faq,
   HeroContent,
@@ -727,4 +728,41 @@ export async function fetchAvailableSlots(): Promise<{ date: string; time: strin
     }
   }
   return slots;
+}
+
+/* -------------------- Consultation Location & Schedule -------------------- */
+
+export const DEFAULT_CONSULTATION_LOCATION: ConsultationLocation = {
+  title: "Gimnasio 653",
+  address: "Córdoba, Argentina",
+  notes: "Atención presencial con turno previo. Presentate 5 minutos antes del horario asignado.",
+  google_maps_url: "",
+};
+
+export async function fetchConsultationLocation(): Promise<ConsultationLocation> {
+  try {
+    const snap = await getDoc(doc(db, "site_content", "consultation_location"));
+    if (snap.exists()) {
+      const data = snap.data();
+      const val = (data?.value ?? data) as Partial<ConsultationLocation>;
+      return {
+        title: val.title?.trim() || DEFAULT_CONSULTATION_LOCATION.title,
+        address: val.address?.trim() || DEFAULT_CONSULTATION_LOCATION.address,
+        notes: val.notes ?? DEFAULT_CONSULTATION_LOCATION.notes,
+        google_maps_url: val.google_maps_url ?? DEFAULT_CONSULTATION_LOCATION.google_maps_url,
+      };
+    }
+  } catch {
+    // fall through
+  }
+  const stored = getStorage<ConsultationLocation | null>("content_consultation_location", null);
+  return (
+    stored || {
+      ...DEFAULT_CONSULTATION_LOCATION,
+    }
+  );
+}
+
+export async function saveConsultationLocation(loc: ConsultationLocation): Promise<void> {
+  await saveContent("consultation_location", loc);
 }
