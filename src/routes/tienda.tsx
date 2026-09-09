@@ -70,23 +70,25 @@ function ShopPage() {
           </p>
         </Reveal>
 
-        <div className="mb-10 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => setActive(null)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${active === null ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}
-          >
-            Todos
-          </button>
-          {categories.map((c) => (
+        {categories.length > 0 && (
+          <div className="mb-10 flex flex-wrap justify-center gap-2">
             <button
-              key={c.id}
-              onClick={() => setActive(c.id)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${active === c.id ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}
+              onClick={() => setActive(null)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${active === null ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}
             >
-              {c.name}
+              Todos
             </button>
-          ))}
-        </div>
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setActive(c.id)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${active === c.id ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {filtered.length === 0 ? (
           <p className="py-16 text-center text-muted-foreground">

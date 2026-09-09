@@ -165,39 +165,41 @@ function Index() {
       </section>
 
       {/* Services */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
-        <Reveal className="mx-auto mb-12 max-w-2xl text-center">
-          <h2 className="font-display text-3xl tracking-tight sm:text-4xl">Servicios</h2>
-          <p className="mt-3 text-muted-foreground">
-            Elegí el acompañamiento que mejor se adapta a vos.
-          </p>
-        </Reveal>
-        <div className="grid gap-6 md:grid-cols-3">
-          {services.slice(0, 3).map((s, i) => (
-            <Reveal key={s.id} delay={i * 0.08}>
-              <div className="flex h-full flex-col rounded-3xl border border-border bg-card p-7 shadow-soft">
-                <h3 className="text-xl font-semibold">{s.title}</h3>
-                <p className="mt-2 flex-1 text-sm text-muted-foreground">{s.description}</p>
-                <div className="mt-5 flex items-center gap-3 text-sm text-muted-foreground">
-                  {s.duration && (
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="h-4 w-4" /> {s.duration}
+      {services.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+          <Reveal className="mx-auto mb-12 max-w-2xl text-center">
+            <h2 className="font-display text-3xl tracking-tight sm:text-4xl">Servicios</h2>
+            <p className="mt-3 text-muted-foreground">
+              Elegí el acompañamiento que mejor se adapta a vos.
+            </p>
+          </Reveal>
+          <div className="grid gap-6 md:grid-cols-3">
+            {services.slice(0, 3).map((s, i) => (
+              <Reveal key={s.id} delay={i * 0.08}>
+                <div className="flex h-full flex-col rounded-3xl border border-border bg-card p-7 shadow-soft">
+                  <h3 className="text-xl font-semibold">{s.title}</h3>
+                  <p className="mt-2 flex-1 text-sm text-muted-foreground">{s.description}</p>
+                  <div className="mt-5 flex items-center gap-3 text-sm text-muted-foreground">
+                    {s.duration && (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-4 w-4" /> {s.duration}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="font-display text-2xl font-semibold text-primary">
+                      {formatPrice(s.price)}
                     </span>
-                  )}
+                    <Button asChild size="sm" className="rounded-full">
+                      <Link to="/reservar">Reservar</Link>
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="font-display text-2xl font-semibold text-primary">
-                    {formatPrice(s.price)}
-                  </span>
-                  <Button asChild size="sm" className="rounded-full">
-                    <Link to="/reservar">Reservar</Link>
-                  </Button>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">

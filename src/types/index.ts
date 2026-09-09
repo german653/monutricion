@@ -46,6 +46,10 @@ export interface Appointment {
   date: string;
   time: string;
   notes: string | null;
+  location_title?: string | null;
+  location_address?: string | null;
+  location_notes?: string | null;
+  location_maps_url?: string | null;
   status: AppointmentStatus;
   created_at: string;
   updated_at: string;
@@ -106,8 +110,10 @@ export interface BrandingContent {
 }
 
 export interface ConsultationLocation {
+  id?: string;
   title: string;
   address: string;
   notes?: string;
   google_maps_url?: string;
+  is_default?: boolean;
 }

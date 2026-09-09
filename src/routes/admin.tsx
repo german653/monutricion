@@ -263,6 +263,12 @@ function AdminPage() {
                         <p className="text-sm text-muted-foreground">
                           {a.service_name ?? "Servicio"} · {a.date} {a.time}
                         </p>
+                        {a.location_title && (
+                          <p className="text-xs font-semibold text-primary">
+                            📍 {a.location_title}
+                            {a.location_address ? ` · ${a.location_address}` : ""}
+                          </p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           {a.email} · {a.phone}
                         </p>

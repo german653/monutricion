@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, MapPin, Navigation, ExternalLink } from "lucide-react";
+import { CheckCircle2, MapPin, Navigation, ExternalLink, Calendar, Clock } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { fetchConsultationLocation } from "@/lib/queries";
+import type { Appointment } from "@/types";
 
 export const Route = createFileRoute("/reservar/confirmacion")({
   head: () => ({
@@ -17,15 +18,40 @@ export const Route = createFileRoute("/reservar/confirmacion")({
   component: ConfirmationPage,
 });
 
+function formatDate(iso: string) {
+  try {
+    const d = new Date(`${iso}T00:00:00`);
+    return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  } catch {
+    return iso;
+  }
+}
+
 function ConfirmationPage() {
-  const { data: location } = useQuery({
+  const { data: defaultLocation } = useQuery({
     queryKey: ["consultation-location"],
     queryFn: fetchConsultationLocation,
   });
 
+  let booked: Appointment | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      const raw = sessionStorage.getItem("mo_last_booked_appointment");
+      if (raw) booked = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+  }
+
+  const locationTitle = booked?.location_title || defaultLocation?.title || "Gimnasio 653";
+  const locationAddress =
+    booked?.location_address || defaultLocation?.address || "Córdoba, Argentina";
+  const locationNotes = booked?.location_notes ?? defaultLocation?.notes;
+  const mapsUrl = booked?.location_maps_url ?? defaultLocation?.google_maps_url;
+
   return (
     <SiteLayout>
-      <section className="mx-auto flex max-w-lg flex-col items-center px-4 py-20 text-center sm:px-6">
+      <section className="mx-auto flex max-w-lg flex-col items-center px-4 py-16 text-center sm:px-6 md:py-20">
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/15 text-success">
           <CheckCircle2 className="h-10 w-10" />
         </div>
@@ -35,9 +61,34 @@ function ConfirmationPage() {
           los detalles. ¡Gracias por confiar!
         </p>
 
-        {location && (location.title || location.address) && (
-          <div className="mt-6 w-full rounded-2xl border border-primary/20 bg-accent/30 p-5 text-left shadow-soft">
-            <div className="flex items-start gap-3">
+        {/* Resumen del turno asignado */}
+        {booked && (
+          <div className="mt-6 w-full rounded-2xl border border-border bg-card p-4 text-left shadow-xs">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Resumen de tu turno
+            </p>
+            <div className="space-y-1.5 text-sm">
+              {booked.service_name && (
+                <p className="font-medium text-foreground">
+                  <span className="text-muted-foreground">Servicio:</span> {booked.service_name}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
+                <span className="inline-flex items-center gap-1.5 text-foreground capitalize">
+                  <Calendar className="h-4 w-4 text-primary" /> {formatDate(booked.date)}
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-foreground">
+                  <Clock className="h-4 w-4 text-primary" /> {booked.time} hs
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tarjeta de ubicación asignada */}
+        {(locationTitle || locationAddress) && (
+          <div className="mt-4 w-full rounded-2xl border border-primary/20 bg-accent/30 p-5 text-left shadow-soft">
+            <div className="flex items-start gap-3.5">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <MapPin className="h-5 w-5" />
               </div>
@@ -45,19 +96,19 @@ function ConfirmationPage() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-primary">
                   Lugar de atención
                 </span>
-                <p className="font-semibold text-foreground">{location.title || "Gimnasio 653"}</p>
-                <p className="text-sm text-foreground/80 font-medium">
-                  {location.address || "Córdoba, Argentina"}
-                </p>
-                {location.notes && (
-                  <p className="mt-1 text-xs text-muted-foreground">{location.notes}</p>
+                <p className="font-semibold text-foreground text-base">{locationTitle}</p>
+                <p className="text-sm text-foreground/80 font-medium">{locationAddress}</p>
+                {locationNotes && (
+                  <p className="mt-1 text-xs text-muted-foreground italic">ℹ️ {locationNotes}</p>
                 )}
-                {(location.google_maps_url || location.address) && (
+                {(mapsUrl || locationAddress) && (
                   <div className="mt-3">
                     <a
                       href={
-                        location.google_maps_url ||
-                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.title} ${location.address}`)}`
+                        mapsUrl ||
+                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          `${locationTitle} ${locationAddress}`,
+                        )}`
                       }
                       target="_blank"
                       rel="noopener noreferrer"

@@ -127,17 +127,18 @@ function BookingPage() {
   }, [queryClient]);
 
   const slotsByDate = useMemo(() => {
-    const map = new Map<string, string[]>();
+    const map = new Map<string, AvailableSlotInfo[]>();
     for (const s of slots) {
       if (!map.has(s.date)) map.set(s.date, []);
-      map.get(s.date)!.push(s.time);
+      map.get(s.date)!.push(s);
     }
     return map;
   }, [slots]);
 
   const dates = useMemo(() => Array.from(slotsByDate.keys()).sort(), [slotsByDate]);
   const [selectedDate, setSelectedDate] = useState("");
-  const times = selectedDate ? (slotsByDate.get(selectedDate) ?? []) : [];
+  const slotsForDate = selectedDate ? (slotsByDate.get(selectedDate) ?? []) : [];
+  const times = slotsForDate.map((s) => s.time);
 
   const {
     register,
@@ -149,10 +150,15 @@ function BookingPage() {
 
   const selectedTime = watch("time");
 
+  const selectedSlot = useMemo(() => {
+    if (!selectedDate || !selectedTime) return null;
+    return slots.find((s) => s.date === selectedDate && s.time === selectedTime) ?? null;
+  }, [slots, selectedDate, selectedTime]);
+
   // Real-time conflict protection: If another user reserves the currently selected time, warn immediately
   useEffect(() => {
     if (selectedDate && selectedTime) {
-      const availableTimes = slotsByDate.get(selectedDate) ?? [];
+      const availableTimes = (slotsByDate.get(selectedDate) ?? []).map((s) => s.time);
       if (availableTimes.length > 0 && !availableTimes.includes(selectedTime)) {
         setValue("time", "");
         toast.warning(
@@ -176,6 +182,10 @@ function BookingPage() {
         date: values.date,
         time: values.time,
         notes: values.notes ?? null,
+        location_title: selectedSlot?.location_title ?? null,
+        location_address: selectedSlot?.location_address ?? null,
+        location_notes: selectedSlot?.location_notes ?? null,
+        location_maps_url: selectedSlot?.location_maps_url ?? null,
       });
       await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       toast.success("¡Tu turno fue reservado con éxito!");
@@ -212,51 +222,6 @@ function BookingPage() {
             Completá el formulario y me pondré en contacto con vos.
           </p>
         </Reveal>
-
-        {/* Lugar de atención presencial */}
-        {location && (location.title || location.address) && (
-          <Reveal className="mb-8">
-            <div className="rounded-3xl border border-primary/20 bg-accent/30 p-6 shadow-soft transition-all">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-                    <MapPin className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                      Lugar de atención presencial
-                    </span>
-                    <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
-                      {location.title || "Gimnasio 653"}
-                    </h2>
-                    <p className="mt-0.5 text-sm font-medium text-foreground/80">
-                      {location.address || "Córdoba, Argentina"}
-                    </p>
-                    {location.notes && (
-                      <p className="mt-1.5 text-xs text-muted-foreground">{location.notes}</p>
-                    )}
-                  </div>
-                </div>
-
-                {(location.google_maps_url || location.address) && (
-                  <a
-                    href={
-                      location.google_maps_url ||
-                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.title} ${location.address}`)}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground shadow-xs transition-colors hover:bg-accent sm:self-center"
-                  >
-                    <Navigation className="h-3.5 w-3.5 text-primary" />
-                    <span>Ver cómo llegar</span>
-                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                  </a>
-                )}
-              </div>
-            </div>
-          </Reveal>
-        )}
 
         <Reveal>
           {dates.length === 0 ? (
@@ -376,15 +341,68 @@ function BookingPage() {
                           ? "Sin horarios disponibles"
                           : "Elegí un horario"}
                     </option>
-                    {times.map((t) => (
-                      <option key={t} value={t}>
-                        {t} hs
+                    {slotsForDate.map((s) => (
+                      <option key={s.time} value={s.time}>
+                        {s.time} hs{s.location_title ? ` — 📍 ${s.location_title}` : ""}
                       </option>
                     ))}
                   </select>
                   {errors.time && <p className="text-sm text-destructive">{errors.time.message}</p>}
                 </div>
               </div>
+
+              {/* Lugar de atención dinámico según el horario seleccionado */}
+              {selectedSlot ? (
+                <div className="rounded-2xl border border-primary/25 bg-accent/40 p-5 shadow-xs transition-all animate-in fade-in slide-in-from-top-2">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3.5">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xs">
+                        <MapPin className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                          Lugar de atención para este horario ({selectedSlot.time} hs)
+                        </span>
+                        <h3 className="font-display text-xl font-bold tracking-tight text-foreground">
+                          {selectedSlot.location_title}
+                        </h3>
+                        <p className="mt-0.5 text-sm font-medium text-foreground/80">
+                          {selectedSlot.location_address}
+                        </p>
+                        {selectedSlot.location_notes && (
+                          <p className="mt-1 text-xs text-muted-foreground italic">
+                            ℹ️ {selectedSlot.location_notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {(selectedSlot.location_maps_url || selectedSlot.location_address) && (
+                      <a
+                        href={
+                          selectedSlot.location_maps_url ||
+                          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${selectedSlot.location_title} ${selectedSlot.location_address}`,
+                          )}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 self-start rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-xs transition-colors hover:bg-accent sm:self-center"
+                      >
+                        <Navigation className="h-3.5 w-3.5 text-primary" />
+                        <span>Ver cómo llegar</span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : selectedDate && times.length > 0 ? (
+                <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-3 text-center text-xs text-muted-foreground">
+                  📍 Seleccioná un horario para ver el lugar de atención presencial correspondiente
+                  a ese turno.
+                </div>
+              ) : null}
+
               {selectedDate && times.length === 0 && (
                 <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-700 dark:text-amber-300">
                   Todos los turnos de este día ya han sido reservados. Por favor seleccioná otra

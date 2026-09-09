@@ -28,6 +28,26 @@ import type {
 
 /* ----------------------------- Default Initial Data ----------------------------- */
 
+// Clear stale mock products and recipes from localStorage if present
+if (typeof window !== "undefined") {
+  try {
+    const p = localStorage.getItem("mo_data_products");
+    if (p && (p.includes("p-1") || p.includes("Proteína Vegetal"))) {
+      localStorage.removeItem("mo_data_products");
+    }
+    const r = localStorage.getItem("mo_data_recipes");
+    if (r && (r.includes("r-1") || r.includes("Pancake proteico"))) {
+      localStorage.removeItem("mo_data_recipes");
+    }
+    const c = localStorage.getItem("mo_data_categories");
+    if (c && c.includes("c-1")) {
+      localStorage.removeItem("mo_data_categories");
+    }
+  } catch {
+    // ignore
+  }
+}
+
 const DEFAULT_SERVICES: Service[] = [
   {
     id: "s-1",
@@ -67,112 +87,11 @@ const DEFAULT_SERVICES: Service[] = [
   },
 ];
 
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: "p-1",
-    name: "Proteína Vegetal Neutra 500g",
-    description: "Suplemento proteico a base de arveja y arroz, sin aditivos ni azúcares.",
-    price: 12500,
-    stock: 15,
-    category_id: "c-1",
-    is_active: true,
-    image_url:
-      "https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?w=600&auto=format&fit=crop&q=80",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "p-2",
-    name: "Mix Frutos Secos & Semillas 250g",
-    description: "Almendras, nueces, castañas de cajú y semillas tostadas sin sal agregada.",
-    price: 4500,
-    stock: 25,
-    category_id: "c-2",
-    is_active: true,
-    image_url:
-      "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=600&auto=format&fit=crop&q=80",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "p-3",
-    name: "Infusión Digestiva Herbal 100g",
-    description:
-      "Mezcla de manzanilla, menta, cedrón y anís estrellado para después de las comidas.",
-    price: 3200,
-    stock: 20,
-    category_id: "c-3",
-    is_active: true,
-    image_url:
-      "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
+const DEFAULT_PRODUCTS: Product[] = [];
 
-const DEFAULT_RECIPES: Recipe[] = [
-  {
-    id: "r-1",
-    title: "Pancake proteico de avena y banana",
-    description:
-      "Un desayuno rápido, saciante y lleno de nutrientes para empezar el día con energía.",
-    image_url:
-      "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=800&auto=format&fit=crop&q=80",
-    category: "Desayunos",
-    prep_time: "15 min",
-    servings: "2 porciones",
-    ingredients:
-      "• 1 taza de avena arrollada\n• 1 banana madura\n• 2 huevos\n• 1 cdita de canela\n• 1 cdita de polvo para hornear\n• Frutos rojos para decorar",
-    steps:
-      "1. Procesar todos los ingredientes en licuadora hasta obtener una mezcla homogénea.\n2. Calentar una sartén antiadherente con unas gotas de aceite de coco.\n3. Verter porciones y cocinar a fuego medio hasta que salgan burbujas, dar vuelta y dorar 1 min.\n4. Servir con frutas frescas.",
-    sort_order: 1,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "r-2",
-    title: "Bowl fresco de quinoa, palta y vegetales asados",
-    description: "Almuerzo completo con proteína vegetal, grasas saludables y fibra de calidad.",
-    image_url:
-      "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80",
-    category: "Almuerzos",
-    prep_time: "25 min",
-    servings: "2 platos",
-    ingredients:
-      "• 1 taza de quinoa cocida\n• 1 palta en cubos\n• 1 taza de calabaza asada\n• 1 taza de hojas verdes variadas\n• Semillas de girasol tostadas\n• Limón, aceite de oliva virgen extra y sal marina",
-    steps:
-      "1. Cocinar la quinoa lavada en 2 partes de agua por 15 minutos.\n2. Disponer una base de hojas verdes en dos bowls.\n3. Agregar la quinoa tibia, la calabaza asada y la palta fresca.\n4. Condimentar con la vinagreta de limón y oliva y espolvorear las semillas.",
-    sort_order: 2,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "r-3",
-    title: "Trufas energéticas de cacao y dátiles",
-    description: "Snack dulce sin azúcares refinados, ideal para antes o después de entrenar.",
-    image_url:
-      "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&auto=format&fit=crop&q=80",
-    category: "Snacks",
-    prep_time: "10 min",
-    servings: "10 unidades",
-    ingredients:
-      "• 10 dátiles descarozados hidratados\n• 1/2 taza de nueces o almendras\n• 2 cdas de cacao amargo en polvo\n• 1 cda de semillas de chía\n• Coco rallado para rebozar",
-    steps:
-      "1. Procesar los frutos secos y los dátiles hasta que se forme una pasta moldeable.\n2. Incorporar el cacao y las semillas.\n3. Formar bolitas con las manos y rebozarlas en coco rallado.\n4. Refrigerar 30 minutos antes de consumir.",
-    sort_order: 3,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
+const DEFAULT_RECIPES: Recipe[] = [];
 
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: "c-1", name: "Suplementos", slug: "suplementos", created_at: new Date().toISOString() },
-  { id: "c-2", name: "Snacks saludables", slug: "snacks", created_at: new Date().toISOString() },
-  { id: "c-3", name: "Infusiones", slug: "infusiones", created_at: new Date().toISOString() },
-];
+const DEFAULT_CATEGORIES: Category[] = [];
 
 const DEFAULT_FAQ: Faq[] = [
   {
@@ -386,6 +305,10 @@ export interface NewAppointment {
   date: string;
   time: string;
   notes?: string | null;
+  location_title?: string | null;
+  location_address?: string | null;
+  location_notes?: string | null;
+  location_maps_url?: string | null;
 }
 
 export async function createAppointment(input: NewAppointment): Promise<void> {
@@ -400,10 +323,23 @@ export async function createAppointment(input: NewAppointment): Promise<void> {
     date: cleanDate,
     time: cleanTime,
     id: newId,
+    location_title: input.location_title ?? null,
+    location_address: input.location_address ?? null,
+    location_notes: input.location_notes ?? null,
+    location_maps_url: input.location_maps_url ?? null,
     status: "pendiente",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+
+  // Keep last booked appointment details in sessionStorage for the confirmation screen
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.setItem("mo_last_booked_appointment", JSON.stringify(newApp));
+    } catch {
+      // ignore
+    }
+  }
 
   // 1. First verify if local cache already has a conflict (for immediate responsiveness)
   const existingLocal = getStorage<Appointment[]>("appointments", []);
@@ -755,7 +691,21 @@ export interface AvailabilitySlot {
   id: string;
   date: string;
   time: string;
+  location_id?: string;
+  location_title?: string;
+  location_address?: string;
+  location_notes?: string;
+  location_maps_url?: string;
   created_at: string;
+}
+
+export interface AvailableSlotInfo {
+  date: string;
+  time: string;
+  location_title?: string;
+  location_address?: string;
+  location_notes?: string;
+  location_maps_url?: string;
 }
 
 export async function fetchAvailability(): Promise<AvailabilitySlot[]> {
@@ -776,16 +726,25 @@ export async function fetchAvailability(): Promise<AvailabilitySlot[]> {
   return getStorage<AvailabilitySlot[]>("availability", []);
 }
 
-export async function addAvailabilitySlots(date: string, times: string[]) {
+export async function addAvailabilitySlots(
+  date: string,
+  times: string[],
+  location?: Partial<ConsultationLocation>,
+) {
   const current = getStorage<AvailabilitySlot[]>("availability", []);
   const newSlots: AvailabilitySlot[] = [];
 
   for (const time of times) {
     const slotId = `${date}_${time.replace(":", "-")}`;
-    const slotData = {
+    const slotData: AvailabilitySlot = {
       id: slotId,
       date,
       time,
+      location_id: location?.id || undefined,
+      location_title: location?.title?.trim() || undefined,
+      location_address: location?.address?.trim() || undefined,
+      location_notes: location?.notes?.trim() || undefined,
+      location_maps_url: location?.google_maps_url?.trim() || undefined,
       created_at: new Date().toISOString(),
     };
     newSlots.push(slotData);
@@ -797,7 +756,51 @@ export async function addAvailabilitySlots(date: string, times: string[]) {
     }
   }
 
-  setStorage("availability", [...current, ...newSlots]);
+  // Deduplicate and update localStorage
+  const map = new Map(current.map((s) => [s.id, s]));
+  for (const s of newSlots) {
+    map.set(s.id, s);
+  }
+  setStorage("availability", Array.from(map.values()));
+}
+
+export async function updateSlotsLocation(
+  slotIds: string[],
+  location: Partial<ConsultationLocation>,
+) {
+  const current = getStorage<AvailabilitySlot[]>("availability", []);
+  const updated = current.map((s) => {
+    if (slotIds.includes(s.id)) {
+      return {
+        ...s,
+        location_id: location.id || s.location_id,
+        location_title: location.title?.trim() || s.location_title,
+        location_address: location.address?.trim() || s.location_address,
+        location_notes: location.notes?.trim() || s.location_notes,
+        location_maps_url: location.google_maps_url?.trim() || s.location_maps_url,
+      };
+    }
+    return s;
+  });
+  setStorage("availability", updated);
+
+  for (const slotId of slotIds) {
+    try {
+      await setDoc(
+        doc(db, "availability", slotId),
+        {
+          location_id: location.id || undefined,
+          location_title: location.title?.trim() || undefined,
+          location_address: location.address?.trim() || undefined,
+          location_notes: location.notes?.trim() || undefined,
+          location_maps_url: location.google_maps_url?.trim() || undefined,
+        },
+        { merge: true },
+      );
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export async function deleteAvailabilitySlot(id: string) {
@@ -825,36 +828,26 @@ function isSlotInFuture(dateStr: string, timeStr: string): boolean {
   }
 }
 
-/** Free slots for the public booking page. Excludes occupied appointments, slot locks, and past dates. */
-export async function fetchAvailableSlots(): Promise<{ date: string; time: string }[]> {
-  let rawSlots: { date: string; time: string }[] = [];
+/** Free slots for the public booking page with slot-specific location details. Excludes occupied appointments, slot locks, and past dates. */
+export async function fetchAvailableSlots(): Promise<AvailableSlotInfo[]> {
+  let rawSlots: AvailabilitySlot[] = [];
 
   try {
     const storedSlots = await fetchAvailability();
     if (storedSlots.length > 0) {
-      rawSlots = storedSlots.map((s) => ({ date: s.date, time: s.time }));
+      rawSlots = storedSlots;
     }
   } catch {
     // fall through
   }
 
-  // Generate availability for upcoming business days if none configured
+  // NOTE: No fake slots are generated. Only real slots configured in availability appear.
   if (rawSlots.length === 0) {
-    const base = new Date();
-    for (let i = 1; i <= 14; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      if (d.getDay() !== 0 && d.getDay() !== 6) {
-        const dateStr = d.toISOString().slice(0, 10);
-        rawSlots.push(
-          { date: dateStr, time: "09:00" },
-          { date: dateStr, time: "11:00" },
-          { date: dateStr, time: "15:00" },
-          { date: dateStr, time: "17:00" },
-        );
-      }
-    }
+    return [];
   }
+
+  // Default fallback location for any slots created before multi-location was enabled
+  const defaultLoc = await fetchConsultationLocation();
 
   // Collect all occupied slots from Firestore & LocalStorage
   const occupiedKeys = new Set<string>();
@@ -891,12 +884,21 @@ export async function fetchAvailableSlots(): Promise<{ date: string; time: strin
     }
   }
 
-  // Filter out occupied slots and past slots
-  const available = rawSlots.filter((slot) => {
-    const key = `${slot.date.trim()}___${slot.time.trim()}`;
-    if (occupiedKeys.has(key)) return false;
-    return isSlotInFuture(slot.date, slot.time);
-  });
+  // Filter out occupied slots and past slots, and map to slot info with location
+  const available: AvailableSlotInfo[] = rawSlots
+    .filter((slot) => {
+      const key = `${slot.date.trim()}___${slot.time.trim()}`;
+      if (occupiedKeys.has(key)) return false;
+      return isSlotInFuture(slot.date, slot.time);
+    })
+    .map((slot) => ({
+      date: slot.date,
+      time: slot.time,
+      location_title: slot.location_title || defaultLoc.title || "Gimnasio 653",
+      location_address: slot.location_address || defaultLoc.address || "Córdoba, Argentina",
+      location_notes: slot.location_notes ?? defaultLoc.notes,
+      location_maps_url: slot.location_maps_url ?? defaultLoc.google_maps_url,
+    }));
 
   return available;
 }
@@ -904,11 +906,53 @@ export async function fetchAvailableSlots(): Promise<{ date: string; time: strin
 /* -------------------- Consultation Location & Schedule -------------------- */
 
 export const DEFAULT_CONSULTATION_LOCATION: ConsultationLocation = {
+  id: "loc-1",
   title: "Gimnasio 653",
   address: "Córdoba, Argentina",
   notes: "Atención presencial con turno previo. Presentate 5 minutos antes del horario asignado.",
   google_maps_url: "",
+  is_default: true,
 };
+
+export async function fetchConsultationLocations(): Promise<ConsultationLocation[]> {
+  try {
+    const snap = await getDoc(doc(db, "site_content", "consultation_locations"));
+    if (snap.exists()) {
+      const data = snap.data();
+      const val = (data?.value ?? data?.list ?? data) as ConsultationLocation[];
+      if (Array.isArray(val) && val.length > 0) {
+        return val;
+      }
+    }
+  } catch {
+    // fall through
+  }
+  const storedList = getStorage<ConsultationLocation[] | null>(
+    "content_consultation_locations",
+    null,
+  );
+  if (storedList && storedList.length > 0) return storedList;
+
+  const single = await fetchConsultationLocation();
+  return [
+    {
+      id: single.id || "loc-1",
+      title: single.title || DEFAULT_CONSULTATION_LOCATION.title,
+      address: single.address || DEFAULT_CONSULTATION_LOCATION.address,
+      notes: single.notes ?? DEFAULT_CONSULTATION_LOCATION.notes,
+      google_maps_url: single.google_maps_url ?? DEFAULT_CONSULTATION_LOCATION.google_maps_url,
+      is_default: true,
+    },
+  ];
+}
+
+export async function saveConsultationLocations(list: ConsultationLocation[]): Promise<void> {
+  await saveContent("consultation_locations", list);
+  const def = list.find((l) => l.is_default) || list[0];
+  if (def) {
+    await saveContent("consultation_location", def);
+  }
+}
 
 export async function fetchConsultationLocation(): Promise<ConsultationLocation> {
   try {
@@ -917,10 +961,12 @@ export async function fetchConsultationLocation(): Promise<ConsultationLocation>
       const data = snap.data();
       const val = (data?.value ?? data) as Partial<ConsultationLocation>;
       return {
+        id: val.id || "loc-1",
         title: val.title?.trim() || DEFAULT_CONSULTATION_LOCATION.title,
         address: val.address?.trim() || DEFAULT_CONSULTATION_LOCATION.address,
         notes: val.notes ?? DEFAULT_CONSULTATION_LOCATION.notes,
         google_maps_url: val.google_maps_url ?? DEFAULT_CONSULTATION_LOCATION.google_maps_url,
+        is_default: true,
       };
     }
   } catch {
