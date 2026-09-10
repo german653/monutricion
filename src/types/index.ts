@@ -85,6 +85,19 @@ export interface HeroContent {
   image_url?: string;
 }
 
+export interface ValueCard {
+  id?: string;
+  icon: string;
+  title: string;
+  text: string;
+}
+
+export interface ValuesContent {
+  title: string;
+  subtitle: string;
+  items: ValueCard[];
+}
+
 export interface AboutContent {
   title: string;
   body: string;

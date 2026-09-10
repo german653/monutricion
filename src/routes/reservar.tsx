@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +20,7 @@ import {
   createAppointment,
   fetchConsultationLocation,
   SlotCollisionError,
+  type AvailableSlotInfo,
 } from "@/lib/queries";
 
 export const Route = createFileRoute("/reservar")({
@@ -155,8 +156,16 @@ function BookingPage() {
     return slots.find((s) => s.date === selectedDate && s.time === selectedTime) ?? null;
   }, [slots, selectedDate, selectedTime]);
 
+  // Track submission state with refs to avoid false warnings caused by our own booking
+  const isSubmittingBookingRef = useRef(false);
+  const bookingSucceededRef = useRef(false);
+
   // Real-time conflict protection: If another user reserves the currently selected time, warn immediately
   useEffect(() => {
+    // If the current user is submitting or has succeeded, ignore the slot removal
+    if (isSubmittingBookingRef.current || bookingSucceededRef.current) {
+      return;
+    }
     if (selectedDate && selectedTime) {
       const availableTimes = (slotsByDate.get(selectedDate) ?? []).map((s) => s.time);
       if (availableTimes.length > 0 && !availableTimes.includes(selectedTime)) {
@@ -170,6 +179,7 @@ function BookingPage() {
   }, [slotsByDate, selectedDate, selectedTime, setValue]);
 
   const onSubmit = async (values: FormValues) => {
+    isSubmittingBookingRef.current = true;
     try {
       const service = services.find((s) => s.id === values.service_id);
       await createAppointment({
@@ -187,10 +197,12 @@ function BookingPage() {
         location_notes: selectedSlot?.location_notes ?? null,
         location_maps_url: selectedSlot?.location_maps_url ?? null,
       });
+      bookingSucceededRef.current = true;
       await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       toast.success("¡Tu turno fue reservado con éxito!");
       navigate({ to: "/reservar/confirmacion" });
     } catch (err: unknown) {
+      isSubmittingBookingRef.current = false;
       await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       const errorObj = err as { name?: string; message?: string } | undefined;
       if (

@@ -24,6 +24,8 @@ import type {
   Product,
   Recipe,
   Service,
+  ValueCard,
+  ValuesContent,
 } from "@/types";
 
 /* ----------------------------- Default Initial Data ----------------------------- */
@@ -152,6 +154,37 @@ const DEFAULT_HERO: HeroContent = {
     "Acompañamiento profesional, planes personalizados y herramientas prácticas para construir hábitos sostenibles.",
 };
 
+export const DEFAULT_VALUES: ValuesContent = {
+  title: "Un enfoque cercano y profesional",
+  subtitle: "Todo lo que necesitás para mejorar tu relación con la comida.",
+  items: [
+    {
+      id: "val-1",
+      icon: "HeartPulse",
+      title: "Salud real",
+      text: "Hábitos sostenibles que cuidan tu bienestar a largo plazo.",
+    },
+    {
+      id: "val-2",
+      icon: "Leaf",
+      title: "Cercanía",
+      text: "Un acompañamiento humano, sin dietas imposibles ni culpa.",
+    },
+    {
+      id: "val-3",
+      icon: "Salad",
+      title: "Personalizado",
+      text: "Planes a medida según tus gustos, tu ritmo y tus objetivos.",
+    },
+    {
+      id: "val-4",
+      icon: "Sparkles",
+      title: "Evidencia",
+      text: "Nutrición basada en ciencia, adaptada a la vida real.",
+    },
+  ],
+};
+
 export const DEFAULT_FOOTER_WHATSAPP_MESSAGE =
   "¡Holaa Melina! Vi tu sitio web y te quiero hacerte una consulta. Espero tu mensaje";
 
@@ -265,6 +298,76 @@ export async function fetchFaq(): Promise<Faq[]> {
   return getStorage<Faq[]>("faq", DEFAULT_FAQ);
 }
 
+export async function upsertFaq(input: Partial<Faq>): Promise<void> {
+  const id = input.id || crypto.randomUUID();
+  const currentList = getStorage<Faq[]>("faq", DEFAULT_FAQ);
+  const existing = currentList.find((f) => f.id === id);
+
+  const payload: Faq = {
+    id,
+    question: input.question || existing?.question || "",
+    answer: input.answer || existing?.answer || "",
+    sort_order:
+      input.sort_order !== undefined
+        ? input.sort_order
+        : existing?.sort_order || currentList.length + 1,
+    created_at: existing?.created_at || new Date().toISOString(),
+  };
+
+  try {
+    await setDoc(doc(db, "faq", id), payload, { merge: true });
+  } catch {
+    // ignore
+  }
+
+  if (input.id && existing) {
+    const next = currentList.map((f) => (f.id === id ? payload : f));
+    next.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    setStorage("faq", next);
+  } else {
+    const next = [...currentList, payload];
+    next.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    setStorage("faq", next);
+  }
+}
+
+export async function deleteFaq(id: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, "faq", id));
+  } catch {
+    // ignore
+  }
+  const currentList = getStorage<Faq[]>("faq", DEFAULT_FAQ);
+  setStorage(
+    "faq",
+    currentList.filter((f) => f.id !== id),
+  );
+}
+
+export async function reorderFaqs(faqs: Faq[]): Promise<void> {
+  const reordered = faqs.map((f, idx) => ({ ...f, sort_order: idx + 1 }));
+  setStorage("faq", reordered);
+
+  for (const f of reordered) {
+    try {
+      await setDoc(doc(db, "faq", f.id), { sort_order: f.sort_order }, { merge: true });
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export async function resetDefaultFaqs(): Promise<void> {
+  for (const f of DEFAULT_FAQ) {
+    try {
+      await setDoc(doc(db, "faq", f.id), f, { merge: true });
+    } catch {
+      // ignore
+    }
+  }
+  setStorage("faq", DEFAULT_FAQ);
+}
+
 export async function fetchContent<T>(key: string, fallback?: T): Promise<T | null> {
   try {
     const docRef = doc(db, "site_content", key);
@@ -282,6 +385,7 @@ export async function fetchContent<T>(key: string, fallback?: T): Promise<T | nu
 }
 
 export const fetchHero = () => fetchContent<HeroContent>("hero", DEFAULT_HERO);
+export const fetchValues = () => fetchContent<ValuesContent>("values", DEFAULT_VALUES);
 export const fetchAbout = () => fetchContent<AboutContent>("about", DEFAULT_ABOUT);
 export const fetchContact = () => fetchContent<ContactContent>("contact", DEFAULT_CONTACT);
 export const fetchBranding = () => fetchContent<BrandingContent>("branding", DEFAULT_BRANDING);
@@ -323,6 +427,7 @@ export async function createAppointment(input: NewAppointment): Promise<void> {
     date: cleanDate,
     time: cleanTime,
     id: newId,
+    notes: input.notes ?? null,
     location_title: input.location_title ?? null,
     location_address: input.location_address ?? null,
     location_notes: input.location_notes ?? null,
@@ -412,6 +517,25 @@ export async function createAppointment(input: NewAppointment): Promise<void> {
   }
 
   setStorage("appointments", [newApp, ...existingLocal]);
+
+  // Keep locally tracked bookings for this client
+  if (typeof window !== "undefined") {
+    try {
+      const mySaved = getStorage<Appointment[]>("mo_my_appointments", []);
+      setStorage("mo_my_appointments", [newApp, ...mySaved.filter((a) => a.id !== newApp.id)]);
+      localStorage.setItem(
+        "mo_client_contact",
+        JSON.stringify({
+          email: input.email,
+          phone: input.phone,
+          first_name: input.first_name,
+          last_name: input.last_name,
+        }),
+      );
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export async function fetchAppointments(): Promise<Appointment[]> {
@@ -426,6 +550,35 @@ export async function fetchAppointments(): Promise<Appointment[]> {
     // fall through
   }
   return getStorage<Appointment[]>("appointments", []);
+}
+
+export async function fetchAppointmentsByEmailOrPhone(queryText: string): Promise<Appointment[]> {
+  const clean = queryText.trim().toLowerCase();
+  if (!clean) return [];
+
+  const all = await fetchAppointments();
+  const digitsOnly = clean.replace(/[^\d]/g, "");
+
+  const results = all.filter((app) => {
+    const emailMatch = app.email?.toLowerCase().trim() === clean || app.email?.toLowerCase().includes(clean);
+    const phoneDigits = (app.phone || "").replace(/[^\d]/g, "");
+    const phoneMatch = digitsOnly.length >= 6 && phoneDigits.includes(digitsOnly);
+    return emailMatch || phoneMatch;
+  });
+
+  // Also include any locally saved bookings in case offline or recent
+  const myLocal = getStorage<Appointment[]>("mo_my_appointments", []);
+  for (const localApp of myLocal) {
+    const emailMatch = localApp.email?.toLowerCase().trim() === clean || localApp.email?.toLowerCase().includes(clean);
+    const phoneDigits = (localApp.phone || "").replace(/[^\d]/g, "");
+    const phoneMatch = digitsOnly.length >= 6 && phoneDigits.includes(digitsOnly);
+    if ((emailMatch || phoneMatch) && !results.some((r) => r.id === localApp.id)) {
+      results.push(localApp);
+    }
+  }
+
+  results.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  return results;
 }
 
 export async function updateAppointmentStatus(id: string, status: AppointmentStatus) {

@@ -1,11 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, HeartPulse, Leaf, Salad, Sparkles, Clock } from "lucide-react";
+import {
+  ArrowRight,
+  HeartPulse,
+  Leaf,
+  Salad,
+  Sparkles,
+  Clock,
+  Target,
+  Award,
+  ShieldCheck,
+  Activity,
+  Apple,
+  Smile,
+  Dumbbell,
+  Stethoscope,
+  Sun,
+  CheckCircle2,
+  BookOpen,
+  Users,
+} from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Reveal } from "@/components/Reveal";
 import { Button } from "@/components/ui/button";
-import { fetchServices, fetchHero, fetchAbout } from "@/lib/queries";
+import { fetchServices, fetchHero, fetchAbout, fetchValues, DEFAULT_VALUES } from "@/lib/queries";
 import { formatPrice } from "@/lib/format";
 import heroImg from "@/assets/hero-melina.jpg";
 import aboutImg from "@/assets/about-melina.jpg";
@@ -16,6 +35,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData({ queryKey: ["services"], queryFn: fetchServices }),
       context.queryClient.ensureQueryData({ queryKey: ["hero"], queryFn: fetchHero }),
       context.queryClient.ensureQueryData({ queryKey: ["about"], queryFn: fetchAbout }),
+      context.queryClient.ensureQueryData({ queryKey: ["values"], queryFn: fetchValues }),
     ]);
   },
   component: Index,
@@ -28,33 +48,35 @@ export const Route = createFileRoute("/")({
   ),
 });
 
-const values = [
-  {
-    icon: HeartPulse,
-    title: "Salud real",
-    text: "Hábitos sostenibles que cuidan tu bienestar a largo plazo.",
-  },
-  {
-    icon: Leaf,
-    title: "Cercanía",
-    text: "Un acompañamiento humano, sin dietas imposibles ni culpa.",
-  },
-  {
-    icon: Salad,
-    title: "Personalizado",
-    text: "Planes a medida según tus gustos, tu ritmo y tus objetivos.",
-  },
-  {
-    icon: Sparkles,
-    title: "Evidencia",
-    text: "Nutrición basada en ciencia, adaptada a la vida real.",
-  },
-];
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  HeartPulse,
+  Leaf,
+  Salad,
+  Sparkles,
+  Target,
+  Award,
+  ShieldCheck,
+  Activity,
+  Apple,
+  Smile,
+  Dumbbell,
+  Stethoscope,
+  Sun,
+  CheckCircle2,
+  BookOpen,
+  Users,
+};
 
 function Index() {
   const { data: services } = useSuspenseQuery({ queryKey: ["services"], queryFn: fetchServices });
   const { data: hero } = useSuspenseQuery({ queryKey: ["hero"], queryFn: fetchHero });
   const { data: about } = useSuspenseQuery({ queryKey: ["about"], queryFn: fetchAbout });
+  const { data: valuesContent } = useSuspenseQuery({ queryKey: ["values"], queryFn: fetchValues });
+
+  const activeValues =
+    valuesContent?.items && valuesContent.items.length > 0
+      ? valuesContent.items
+      : DEFAULT_VALUES.items;
 
   return (
     <SiteLayout>
@@ -112,28 +134,31 @@ function Index() {
         </div>
       </section>
 
-      {/* Values */}
+      {/* Values / Enfoque */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <Reveal className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
-            Un enfoque cercano y profesional
+            {valuesContent?.title || DEFAULT_VALUES.title}
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Todo lo que necesitás para mejorar tu relación con la comida.
+            {valuesContent?.subtitle || DEFAULT_VALUES.subtitle}
           </p>
         </Reveal>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {values.map((v, i) => (
-            <Reveal key={v.title} delay={i * 0.08}>
-              <div className="h-full rounded-3xl border border-border bg-card p-7 shadow-soft transition-transform hover:-translate-y-1">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-                  <v.icon className="h-6 w-6" />
+          {activeValues.map((v, i) => {
+            const Icon = ICON_MAP[v.icon] || Sparkles;
+            return (
+              <Reveal key={v.id || v.title || i} delay={i * 0.08}>
+                <div className="h-full rounded-3xl border border-border bg-card p-7 shadow-soft transition-transform hover:-translate-y-1">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mb-2 text-lg font-semibold">{v.title}</h3>
+                  <p className="text-sm text-muted-foreground">{v.text}</p>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold">{v.title}</h3>
-                <p className="text-sm text-muted-foreground">{v.text}</p>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </section>
 

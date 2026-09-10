@@ -15,6 +15,7 @@ import {
   LayoutTemplate,
   KeyRound,
   Lock,
+  HelpCircle,
 } from "lucide-react";
 import { useAdmin } from "@/hooks/use-admin";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,13 @@ import { ProductManager } from "@/components/admin/ProductManager";
 import { RecipeManager } from "@/components/admin/RecipeManager";
 import { ContentManager } from "@/components/admin/ContentManager";
 import { AvailabilityManager } from "@/components/admin/AvailabilityManager";
+import { FaqManager } from "@/components/admin/FaqManager";
 import {
   fetchAppointments,
   fetchAllProducts,
   fetchAllServices,
   fetchAllRecipes,
+  fetchFaq,
   updateAppointmentStatus,
   deleteAppointment,
 } from "@/lib/queries";
@@ -77,6 +80,11 @@ function AdminPage() {
   const { data: recipes = [] } = useQuery({
     queryKey: ["all-recipes"],
     queryFn: fetchAllRecipes,
+    enabled,
+  });
+  const { data: faqs = [] } = useQuery({
+    queryKey: ["faq"],
+    queryFn: fetchFaq,
     enabled,
   });
   const [busy, setBusy] = useState<string | null>(null);
@@ -188,6 +196,7 @@ function AdminPage() {
     { icon: Package, label: "Productos", value: products.length },
     { icon: Salad, label: "Servicios", value: services.length },
     { icon: UtensilsCrossed, label: "Recetas", value: recipes.length },
+    { icon: HelpCircle, label: "Preguntas FAQ", value: faqs.length },
   ];
 
   const nextStatus: Record<AppointmentStatus, AppointmentStatus> = {
@@ -212,7 +221,7 @@ function AdminPage() {
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="mb-8 font-display text-3xl tracking-tight">Panel de administración</h1>
 
-        <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {stats.map((s) => (
             <div key={s.label} className="rounded-3xl border border-border bg-card p-6 shadow-soft">
               <s.icon className="mb-3 h-6 w-6 text-primary" />
@@ -238,6 +247,9 @@ function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="recetas" className="rounded-xl">
               <UtensilsCrossed className="mr-1.5 h-4 w-4" /> Recetas
+            </TabsTrigger>
+            <TabsTrigger value="faq" className="rounded-xl">
+              <HelpCircle className="mr-1.5 h-4 w-4" /> Preguntas Frecuentes
             </TabsTrigger>
             <TabsTrigger value="contenido" className="rounded-xl">
               <LayoutTemplate className="mr-1.5 h-4 w-4" /> Contenido
@@ -327,6 +339,10 @@ function AdminPage() {
 
           <TabsContent value="recetas">
             <RecipeManager />
+          </TabsContent>
+
+          <TabsContent value="faq">
+            <FaqManager />
           </TabsContent>
 
           <TabsContent value="contenido">

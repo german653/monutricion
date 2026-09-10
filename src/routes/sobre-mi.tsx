@@ -75,13 +75,44 @@ function AboutPage() {
             {about?.body}
           </div>
           <div className="grid gap-4 pt-2 sm:grid-cols-2">
-            {highlights.map((h) => (
-              <div key={h.key} className="rounded-3xl border border-border bg-card p-5 shadow-soft">
-                <h.icon className="mb-2 h-6 w-6 text-primary" />
-                <h3 className="font-semibold">{h.title}</h3>
-                <p className="text-sm text-muted-foreground">{about?.[h.key] ?? "—"}</p>
-              </div>
-            ))}
+            {highlights.map((h) => {
+              const raw = about?.[h.key];
+              const items = raw
+                ? raw
+                    .split(/•|\n/)
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                : [];
+
+              return (
+                <div
+                  key={h.key}
+                  className="rounded-3xl border border-border bg-card p-5 shadow-soft space-y-2.5"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <h.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-semibold text-foreground">{h.title}</h3>
+                  </div>
+
+                  {items.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {items.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center rounded-xl bg-accent/70 px-2.5 py-1 text-xs font-medium text-foreground border border-border/40 shadow-2xs"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{raw || "—"}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Reveal>
       </section>

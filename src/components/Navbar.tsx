@@ -15,6 +15,7 @@ const links = [
   { to: "/recetas", label: "Recetas" },
   { to: "/tienda", label: "Tienda" },
   { to: "/reservar", label: "Reservar turno" },
+  { to: "/mis-reservas", label: "Mis Reservas" },
   { to: "/contacto", label: "Contacto" },
 ] as const;
 
