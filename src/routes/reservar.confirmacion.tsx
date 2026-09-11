@@ -117,23 +117,18 @@ function ConfirmationPage() {
           mantenerlo agendado y no olvidarte.
         </p>
 
-        {/* Notificación de envío de correo */}
-        <div className="mt-6 w-full rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 text-left shadow-xs flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
-            <Mail className="h-4 w-4" />
+        {/* Notificación de registro exitoso */}
+        <div className="mt-6 w-full rounded-2xl border border-primary/20 bg-primary/10 p-4 text-left shadow-xs flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <BookmarkCheck className="h-4 w-4" />
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">
-              Te enviamos los detalles a tu correo
+              Reserva registrada en el sistema
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Enviamos un e-mail desde{" "}
-              <strong className="font-semibold text-foreground">paginamelinanutricion@gmail.com</strong>{" "}
-              a <strong className="font-semibold text-foreground">{booked?.email || "tu correo"}</strong> con el
-              comprobante y horario de tu reserva para que lo tengas siempre a mano.
-            </p>
-            <p className="text-[0.75rem] text-muted-foreground/80 italic">
-              * Si no lo ves en tu bandeja de entrada en unos minutos, revisá tu carpeta de spam o correo no deseado.
+              Tu turno quedó guardado para <strong className="font-semibold text-foreground">{booked?.first_name ? `${booked.first_name} ${booked.last_name}` : "vos"}</strong>.
+              Podés consultarlo en cualquier momento desde la sección <strong>Mis Reservas</strong> con tu correo (<span className="font-mono text-xs">{booked?.email || "tu email"}</span>) o tu teléfono.
             </p>
           </div>
         </div>

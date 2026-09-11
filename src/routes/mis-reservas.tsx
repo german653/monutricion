@@ -19,6 +19,7 @@ import {
   User,
   Phone,
   Mail,
+  BookmarkCheck,
 } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Reveal } from "@/components/Reveal";
@@ -377,11 +378,10 @@ function MisReservasPage() {
                   turno y verás el horario, el lugar de atención y el estado de confirmación.
                 </p>
               </div>
-              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-muted-foreground text-left flex items-start gap-2.5">
-                <Mail className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+              <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3 text-xs text-muted-foreground text-left flex items-start gap-2.5">
+                <BookmarkCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <span>
-                  Recordá que también te enviamos un correo con los detalles desde{" "}
-                  <strong className="text-foreground">paginamelinanutricion@gmail.com</strong> al momento de reservar.
+                  Tus turnos se guardan en tiempo real en la base de datos. Si tenés dudas o necesitás cambiar tu horario, podés contactar a Melina directamente por WhatsApp.
                 </span>
               </div>
             </div>

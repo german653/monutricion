@@ -5,7 +5,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, MapPin, Navigation, ExternalLink } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  Navigation,
+  ExternalLink,
+  CheckCircle2,
+  MessageCircle,
+  CalendarPlus,
+  Clock,
+  Calendar,
+} from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -15,6 +25,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import type { Appointment } from "@/types";
+import {
   fetchServices,
   fetchAvailableSlots,
   createAppointment,
@@ -22,6 +40,7 @@ import {
   SlotCollisionError,
   type AvailableSlotInfo,
 } from "@/lib/queries";
+import { sendBookingConfirmationEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/reservar")({
   head: () => ({
@@ -71,8 +90,48 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 function formatDate(iso: string) {
-  const d = new Date(`${iso}T00:00:00`);
-  return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  try {
+    const d = new Date(`${iso}T00:00:00`);
+    return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+  } catch {
+    return iso;
+  }
+}
+
+function buildCalendarUrl(app: Appointment, location: string) {
+  try {
+    const [year, month, day] = app.date.split("-").map(Number);
+    const [hours, minutes] = app.time.split(":").map(Number);
+    const start = new Date(year, month - 1, day, hours, minutes);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    const fmt = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, "");
+    const title = encodeURIComponent(
+      `Consulta con Melina Oviedo — ${app.service_name || "Nutrición"}`,
+    );
+    const details = encodeURIComponent(
+      `Turno agendado con la Lic. Melina Oviedo.\nServicio: ${app.service_name || "Consulta Nutricional"}\nPaciente: ${app.first_name} ${app.last_name}\nLugar: ${location}\nContacto: +54 9 3541 63-9512`,
+    );
+    const loc = encodeURIComponent(location);
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${loc}`;
+  } catch {
+    return "#";
+  }
+}
+
+function buildWhatsappUrl(app: Appointment, location: string) {
+  const text = `¡Hola Meli! Acabo de reservar un turno en tu web para consultar con vos:
+
+👤 *Paciente:* ${app.first_name} ${app.last_name}
+🥗 *Servicio:* ${app.service_name || "Consulta Nutricional"}
+📅 *Día:* ${formatDate(app.date)} (${app.date})
+⏰ *Horario:* ${app.time} hs
+📍 *Lugar:* ${location}
+📱 *Teléfono:* ${app.phone}${app.notes ? `\n📝 *Observaciones:* ${app.notes}` : ""}
+
+¡Te escribo para avisarte y tenerlo confirmado en tu agenda!`;
+
+  return `https://wa.me/5493541639512?text=${encodeURIComponent(text)}`;
 }
 
 function BookingPage() {
@@ -87,6 +146,10 @@ function BookingPage() {
   });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const [confirmedAppointment, setConfirmedAppointment] = useState<Appointment | null>(null);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(7);
 
   // Listen to Firestore changes in real-time so taken slots disappear immediately for all users
   useEffect(() => {
@@ -178,11 +241,27 @@ function BookingPage() {
     }
   }, [slotsByDate, selectedDate, selectedTime, setValue]);
 
+  // Auto-redirect to home page after confirmation modal appears
+  useEffect(() => {
+    if (!showConfirmationModal) return;
+
+    if (redirectCountdown <= 0) {
+      navigate({ to: "/" });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setRedirectCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [showConfirmationModal, redirectCountdown, navigate]);
+
   const onSubmit = async (values: FormValues) => {
     isSubmittingBookingRef.current = true;
     try {
       const service = services.find((s) => s.id === values.service_id);
-      await createAppointment({
+      const bookedApp = await createAppointment({
         first_name: values.first_name,
         last_name: values.last_name,
         email: values.email,
@@ -199,8 +278,16 @@ function BookingPage() {
       });
       bookingSucceededRef.current = true;
       await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
+      setConfirmedAppointment(bookedApp);
+      setRedirectCountdown(7);
+      setShowConfirmationModal(true);
       toast.success("¡Tu turno fue reservado con éxito!");
-      navigate({ to: "/reservar/confirmacion" });
+
+      // Enviar correo de confirmación automático mediante EmailJS
+      const locationText = `${bookedApp.location_title || location?.title || "Gimnasio 653"} - ${bookedApp.location_address || location?.address || "Córdoba"}`;
+      sendBookingConfirmationEmail(bookedApp, locationText).catch((e) => {
+        console.warn("Fallo al enviar correo con EmailJS:", e);
+      });
     } catch (err: unknown) {
       isSubmittingBookingRef.current = false;
       await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
@@ -438,6 +525,136 @@ function BookingPage() {
           )}
         </Reveal>
       </section>
+
+      {/* Pop-up modal de confirmación con redirección al inicio */}
+      <Dialog
+        open={showConfirmationModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowConfirmationModal(false);
+            navigate({ to: "/" });
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-3xl p-6 sm:p-7 text-center">
+          <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-9 w-9" />
+          </div>
+
+          <DialogHeader className="space-y-1.5 text-center sm:text-center">
+            <DialogTitle className="font-display text-2xl font-bold text-foreground">
+              ¡Turno confirmado con éxito!
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+              {confirmedAppointment?.first_name ? (
+                <>
+                  ¡Muchas gracias,{" "}
+                  <strong className="text-foreground">{confirmedAppointment.first_name}</strong>!
+                  Tu consulta quedó registrada en la agenda de Melina.
+                </>
+              ) : (
+                "Tu consulta quedó registrada en la agenda de Melina."
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {confirmedAppointment && (
+            <div className="my-2 rounded-2xl border border-border bg-muted/30 p-4 text-left space-y-2.5 text-xs sm:text-sm">
+              <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                <span className="text-[0.7rem] font-bold uppercase tracking-wider text-primary">
+                  {confirmedAppointment.service_name || "Consulta Nutricional"}
+                </span>
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[0.65rem] font-semibold text-emerald-700 dark:text-emerald-300">
+                  Agendado
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="space-y-0.5">
+                  <span className="text-[0.7rem] text-muted-foreground flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-primary" /> Día
+                  </span>
+                  <p className="font-semibold text-foreground capitalize">
+                    {formatDate(confirmedAppointment.date)}
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[0.7rem] text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3 text-primary" /> Horario
+                  </span>
+                  <p className="font-semibold text-foreground">
+                    {confirmedAppointment.time} hs
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-0.5 pt-1 border-t border-border/50">
+                <span className="text-[0.7rem] text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-primary" /> Lugar de atención
+                </span>
+                <p className="font-semibold text-foreground">
+                  {confirmedAppointment.location_title || location?.title || "Gimnasio 653"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {confirmedAppointment.location_address || location?.address || "Córdoba, Argentina"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Acciones directas (WhatsApp y Google Calendar) */}
+          {confirmedAppointment && (
+            <div className="space-y-2 pt-1">
+              <a
+                href={buildWhatsappUrl(
+                  confirmedAppointment,
+                  `${confirmedAppointment.location_title || location?.title || "Gimnasio 653"} - ${confirmedAppointment.location_address || location?.address || "Córdoba"}`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-emerald-700 transition-all"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>Avisarle a Meli por WhatsApp</span>
+              </a>
+
+              <a
+                href={buildCalendarUrl(
+                  confirmedAppointment,
+                  `${confirmedAppointment.location_title || location?.title || "Gimnasio 653"} - ${confirmedAppointment.location_address || location?.address || "Córdoba"}`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors"
+              >
+                <CalendarPlus className="h-3.5 w-3.5 text-primary" />
+                <span>Guardar en Google Calendar</span>
+              </a>
+            </div>
+          )}
+
+          {/* Redirección automática al inicio */}
+          <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
+            <div className="flex items-center justify-between text-[0.75rem] text-muted-foreground">
+              <span>Redirigiendo a la página de inicio...</span>
+              <span className="inline-flex items-center justify-center h-5.5 px-2 rounded-full bg-primary/10 font-bold text-primary text-[0.75rem]">
+                {redirectCountdown}s
+              </span>
+            </div>
+
+            <Button
+              type="button"
+              className="w-full rounded-2xl"
+              onClick={() => {
+                setShowConfirmationModal(false);
+                navigate({ to: "/" });
+              }}
+            >
+              Ir a la página de inicio ahora
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </SiteLayout>
   );
 }

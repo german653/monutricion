@@ -415,7 +415,7 @@ export interface NewAppointment {
   location_maps_url?: string | null;
 }
 
-export async function createAppointment(input: NewAppointment): Promise<void> {
+export async function createAppointment(input: NewAppointment): Promise<Appointment> {
   const cleanTime = input.time.trim();
   const cleanDate = input.date.trim();
   const slotKey = `${cleanDate}_${cleanTime.replace(":", "-")}`;
@@ -536,6 +536,8 @@ export async function createAppointment(input: NewAppointment): Promise<void> {
       // ignore
     }
   }
+
+  return newApp;
 }
 
 export async function fetchAppointments(): Promise<Appointment[]> {
