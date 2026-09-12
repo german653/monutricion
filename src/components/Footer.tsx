@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Instagram, MessageCircle } from "lucide-react";
+import { Instagram, MessageCircle, Lock } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { AdminLoginModal } from "@/components/AdminLoginModal";
 import { buildWhatsappUrl } from "@/lib/format";
@@ -87,13 +87,16 @@ export function Footer() {
       </div>
 
       <div className="border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 pt-6 pb-28 sm:py-6 sm:flex-row sm:px-6 lg:px-8 text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} Melina Oviedo · Nutrición y Salud</p>
           <button
+            type="button"
             onClick={() => setLoginOpen(true)}
-            className="transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground active:scale-95 touch-manipulation"
+            aria-label="Acceso al panel profesional"
           >
-            Acceso
+            <Lock className="h-3 w-3 opacity-60" />
+            <span>Acceso profesional</span>
           </button>
         </div>
       </div>

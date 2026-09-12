@@ -180,9 +180,7 @@ export function FaqManager() {
         </div>
       ) : faqs.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center space-y-3">
-          <p className="text-muted-foreground text-sm">
-            Aún no hay preguntas frecuentes creadas.
-          </p>
+          <p className="text-muted-foreground text-sm">Aún no hay preguntas frecuentes creadas.</p>
           <Button size="sm" className="rounded-full" onClick={handleOpenNew}>
             <Plus className="mr-1.5 h-4 w-4" /> Crear la primera pregunta
           </Button>

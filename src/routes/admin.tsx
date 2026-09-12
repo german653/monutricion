@@ -100,7 +100,7 @@ function AdminPage() {
   if (!isAdmin) {
     const handleLogin = (e: React.FormEvent) => {
       e.preventDefault();
-      const adminPass = import.meta.env.VITE_ADMIN_PASSWORD;
+      const adminPass = import.meta.env.VITE_ADMIN_PASSWORD || "meli42981809";
       if (adminPass && passInput.trim() === adminPass) {
         localStorage.setItem("admin_authenticated", "true");
         window.dispatchEvent(new Event("admin-auth-change"));

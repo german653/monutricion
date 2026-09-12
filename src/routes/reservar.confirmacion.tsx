@@ -45,8 +45,7 @@ function buildCalendarUrl(app: Appointment, location: string) {
     const start = new Date(year, month - 1, day, hours, minutes);
     const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour duration
 
-    const fmt = (d: Date) =>
-      d.toISOString().replace(/-|:|\.\d+/g, "");
+    const fmt = (d: Date) => d.toISOString().replace(/-|:|\.\d+/g, "");
 
     const title = encodeURIComponent(
       `Consulta con Melina Oviedo — ${app.service_name || "Nutrición"}`,
@@ -127,8 +126,14 @@ function ConfirmationPage() {
               Reserva registrada en el sistema
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Tu turno quedó guardado para <strong className="font-semibold text-foreground">{booked?.first_name ? `${booked.first_name} ${booked.last_name}` : "vos"}</strong>.
-              Podés consultarlo en cualquier momento desde la sección <strong>Mis Reservas</strong> con tu correo (<span className="font-mono text-xs">{booked?.email || "tu email"}</span>) o tu teléfono.
+              Tu turno quedó guardado para{" "}
+              <strong className="font-semibold text-foreground">
+                {booked?.first_name ? `${booked.first_name} ${booked.last_name}` : "vos"}
+              </strong>
+              . Podés consultarlo en cualquier momento desde la sección{" "}
+              <strong>Mis Reservas</strong> con tu correo (
+              <span className="font-mono text-xs">{booked?.email || "tu email"}</span>) o tu
+              teléfono.
             </p>
           </div>
         </div>

@@ -14,18 +14,13 @@ export async function sendBookingConfirmationEmail(
   appointment: Appointment,
   locationText: string,
 ): Promise<SendBookingEmailResult> {
-  const serviceId =
-    (import.meta.env.VITE_EMAILJS_SERVICE_ID as string) || DEFAULT_SERVICE_ID;
-  const templateId =
-    (import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string) || DEFAULT_TEMPLATE_ID;
-  const publicKey =
-    (import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string) || DEFAULT_PUBLIC_KEY;
+  const serviceId = (import.meta.env.VITE_EMAILJS_SERVICE_ID as string) || DEFAULT_SERVICE_ID;
+  const templateId = (import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string) || DEFAULT_TEMPLATE_ID;
+  const publicKey = (import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string) || DEFAULT_PUBLIC_KEY;
 
   // Si no está configurado el templateId todavía, advertimos y salimos limpiamente
   if (!serviceId || !templateId || !publicKey) {
-    console.warn(
-      "[EmailJS] Falta configurar VITE_EMAILJS_TEMPLATE_ID para despachar el correo.",
-    );
+    console.warn("[EmailJS] Falta configurar VITE_EMAILJS_TEMPLATE_ID para despachar el correo.");
     return {
       success: false,
       error: "Falta configurar el Template ID de EmailJS",

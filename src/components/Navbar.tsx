@@ -13,6 +13,7 @@ import {
   MessageCircle,
   ChevronRight,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useCart } from "@/features/cart/cart-store";
 import { useAdmin } from "@/hooks/use-admin";
 import { CartSheet } from "@/components/CartSheet";
+import { AdminLoginModal } from "@/components/AdminLoginModal";
 
 const links = [
   { to: "/", label: "Inicio", icon: Home },
@@ -37,6 +39,7 @@ export function Navbar() {
   const { isAdmin } = useAdmin();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
 
   return (
     <>
@@ -139,11 +142,29 @@ export function Navbar() {
                   )}
 
                   <div className="mt-4 pt-3 border-t border-border/60">
-                    <Button asChild className="w-full rounded-2xl py-5 font-semibold text-sm shadow-xs" onClick={() => setMobileOpen(false)}>
+                    <Button
+                      asChild
+                      className="w-full rounded-2xl py-5 font-semibold text-sm shadow-xs"
+                      onClick={() => setMobileOpen(false)}
+                    >
                       <Link to="/reservar">
                         <Calendar className="mr-2 h-4 w-4" /> Reservar turno ahora
                       </Link>
                     </Button>
+
+                    {!isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileOpen(false);
+                          setAdminModalOpen(true);
+                        }}
+                        className="mt-3 w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-muted-foreground/50 hover:text-foreground transition-colors"
+                      >
+                        <Lock className="h-3 w-3 opacity-60" />
+                        <span>Acceso profesional</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </SheetContent>
@@ -152,6 +173,7 @@ export function Navbar() {
         </nav>
 
         <CartSheet open={cartOpen} onOpenChange={setCartOpen} />
+        <AdminLoginModal open={adminModalOpen} onOpenChange={setAdminModalOpen} />
       </header>
 
       {/* Barra de acceso rápido fija en la parte inferior para celulares */}

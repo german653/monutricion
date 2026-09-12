@@ -562,7 +562,8 @@ export async function fetchAppointmentsByEmailOrPhone(queryText: string): Promis
   const digitsOnly = clean.replace(/[^\d]/g, "");
 
   const results = all.filter((app) => {
-    const emailMatch = app.email?.toLowerCase().trim() === clean || app.email?.toLowerCase().includes(clean);
+    const emailMatch =
+      app.email?.toLowerCase().trim() === clean || app.email?.toLowerCase().includes(clean);
     const phoneDigits = (app.phone || "").replace(/[^\d]/g, "");
     const phoneMatch = digitsOnly.length >= 6 && phoneDigits.includes(digitsOnly);
     return emailMatch || phoneMatch;
@@ -571,7 +572,9 @@ export async function fetchAppointmentsByEmailOrPhone(queryText: string): Promis
   // Also include any locally saved bookings in case offline or recent
   const myLocal = getStorage<Appointment[]>("mo_my_appointments", []);
   for (const localApp of myLocal) {
-    const emailMatch = localApp.email?.toLowerCase().trim() === clean || localApp.email?.toLowerCase().includes(clean);
+    const emailMatch =
+      localApp.email?.toLowerCase().trim() === clean ||
+      localApp.email?.toLowerCase().includes(clean);
     const phoneDigits = (localApp.phone || "").replace(/[^\d]/g, "");
     const phoneMatch = digitsOnly.length >= 6 && phoneDigits.includes(digitsOnly);
     if ((emailMatch || phoneMatch) && !results.some((r) => r.id === localApp.id)) {

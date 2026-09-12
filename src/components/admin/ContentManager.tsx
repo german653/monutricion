@@ -206,9 +206,7 @@ export function ContentManager() {
         title: valuesData.title ?? DEFAULT_VALUES.title,
         subtitle: valuesData.subtitle ?? DEFAULT_VALUES.subtitle,
         items:
-          valuesData.items && valuesData.items.length > 0
-            ? valuesData.items
-            : DEFAULT_VALUES.items,
+          valuesData.items && valuesData.items.length > 0 ? valuesData.items : DEFAULT_VALUES.items,
       });
     }
   }, [valuesData]);
@@ -601,10 +599,13 @@ export function ContentManager() {
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                 <HeartPulse className="h-4 w-4" />
               </span>
-              <h2 className="font-display text-xl font-semibold">Apartado de Enfoque y Valores (Inicio)</h2>
+              <h2 className="font-display text-xl font-semibold">
+                Apartado de Enfoque y Valores (Inicio)
+              </h2>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Personalizá el título ("Un enfoque cercano y profesional"), el subtítulo y las tarjetas de pilares que aparecen en la página de inicio.
+              Personalizá el título ("Un enfoque cercano y profesional"), el subtítulo y las
+              tarjetas de pilares que aparecen en la página de inicio.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -617,12 +618,7 @@ export function ContentManager() {
             >
               <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Restaurar originales
             </Button>
-            <Button
-              size="sm"
-              className="rounded-full"
-              onClick={saveValues}
-              disabled={savingValues}
-            >
+            <Button size="sm" className="rounded-full" onClick={saveValues} disabled={savingValues}>
               {savingValues && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Guardar Enfoque
             </Button>
           </div>
@@ -652,9 +648,12 @@ export function ContentManager() {
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-sm text-foreground">Tarjetas de Pilares y Valores</h3>
+              <h3 className="font-semibold text-sm text-foreground">
+                Tarjetas de Pilares y Valores
+              </h3>
               <p className="text-xs text-muted-foreground">
-                Cada tarjeta se mostrará en la página principal con su icono, título y texto descriptivo.
+                Cada tarjeta se mostrará en la página principal con su icono, título y texto
+                descriptivo.
               </p>
             </div>
             <Button
@@ -737,7 +736,9 @@ export function ContentManager() {
                       </select>
                     </div>
                     <div className="sm:col-span-2 space-y-1">
-                      <Label className="text-xs font-medium text-muted-foreground">Título del pilar</Label>
+                      <Label className="text-xs font-medium text-muted-foreground">
+                        Título del pilar
+                      </Label>
                       <Input
                         value={item.title}
                         onChange={(e) => updateValueItem(idx, { title: e.target.value })}
@@ -748,7 +749,9 @@ export function ContentManager() {
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-medium text-muted-foreground">Descripción breve</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      Descripción breve
+                    </Label>
                     <Textarea
                       rows={2}
                       value={item.text}
@@ -779,7 +782,8 @@ export function ContentManager() {
               {valuesDraft.title || "Un enfoque cercano y profesional"}
             </h4>
             <p className="text-xs text-muted-foreground">
-              {valuesDraft.subtitle || "Todo lo que necesitás para mejorar tu relación con la comida."}
+              {valuesDraft.subtitle ||
+                "Todo lo que necesitás para mejorar tu relación con la comida."}
             </p>
           </div>
 
@@ -794,7 +798,9 @@ export function ContentManager() {
                   <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                     <IconComp className="h-4 w-4" />
                   </div>
-                  <div className="font-semibold text-xs text-foreground truncate">{item.title || "Pilar"}</div>
+                  <div className="font-semibold text-xs text-foreground truncate">
+                    {item.title || "Pilar"}
+                  </div>
                   <p className="text-[0.7rem] text-muted-foreground line-clamp-3 leading-snug">
                     {item.text || "Descripción breve"}
                   </p>
@@ -885,9 +891,7 @@ export function ContentManager() {
               title="Experiencia y Títulos"
               description="Agregá uno por uno tus títulos, matrículas o certificaciones (se mostrarán como ítems destacados en la web)."
               items={parseBulletItems(aboutDraft.experience)}
-              onChange={(items) =>
-                setAboutDraft({ ...aboutDraft, experience: items.join(" • ") })
-              }
+              onChange={(items) => setAboutDraft({ ...aboutDraft, experience: items.join(" • ") })}
               placeholder="Ej: Lic. en Nutrición (UNC)"
             />
 
@@ -895,9 +899,7 @@ export function ContentManager() {
               title="Especialidades"
               description="Agregá tus áreas de especialización o certificaciones (Nutrición deportiva, ISAK, etc.)."
               items={parseBulletItems(aboutDraft.specialties)}
-              onChange={(items) =>
-                setAboutDraft({ ...aboutDraft, specialties: items.join(" • ") })
-              }
+              onChange={(items) => setAboutDraft({ ...aboutDraft, specialties: items.join(" • ") })}
               placeholder="Ej: Nutrición deportiva"
             />
           </div>
@@ -969,7 +971,9 @@ function ItemListEditor({
           {items.length} {items.length === 1 ? "ítem" : "ítems"}
         </span>
       </div>
-      {description && <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>}
+      {description && (
+        <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+      )}
 
       {/* Lista de ítems */}
       <div className="space-y-2">

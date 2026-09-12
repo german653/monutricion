@@ -549,8 +549,8 @@ function BookingPage() {
               {confirmedAppointment?.first_name ? (
                 <>
                   ¡Muchas gracias,{" "}
-                  <strong className="text-foreground">{confirmedAppointment.first_name}</strong>!
-                  Tu consulta quedó registrada en la agenda de Melina.
+                  <strong className="text-foreground">{confirmedAppointment.first_name}</strong>! Tu
+                  consulta quedó registrada en la agenda de Melina.
                 </>
               ) : (
                 "Tu consulta quedó registrada en la agenda de Melina."
@@ -582,9 +582,7 @@ function BookingPage() {
                   <span className="text-[0.7rem] text-muted-foreground flex items-center gap-1">
                     <Clock className="h-3 w-3 text-primary" /> Horario
                   </span>
-                  <p className="font-semibold text-foreground">
-                    {confirmedAppointment.time} hs
-                  </p>
+                  <p className="font-semibold text-foreground">{confirmedAppointment.time} hs</p>
                 </div>
               </div>
 
@@ -596,7 +594,9 @@ function BookingPage() {
                   {confirmedAppointment.location_title || location?.title || "Gimnasio 653"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {confirmedAppointment.location_address || location?.address || "Córdoba, Argentina"}
+                  {confirmedAppointment.location_address ||
+                    location?.address ||
+                    "Córdoba, Argentina"}
                 </p>
               </div>
             </div>

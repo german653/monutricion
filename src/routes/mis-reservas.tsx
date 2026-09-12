@@ -381,7 +381,8 @@ function MisReservasPage() {
               <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3 text-xs text-muted-foreground text-left flex items-start gap-2.5">
                 <BookmarkCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <span>
-                  Tus turnos se guardan en tiempo real en la base de datos. Si tenés dudas o necesitás cambiar tu horario, podés contactar a Melina directamente por WhatsApp.
+                  Tus turnos se guardan en tiempo real en la base de datos. Si tenés dudas o
+                  necesitás cambiar tu horario, podés contactar a Melina directamente por WhatsApp.
                 </span>
               </div>
             </div>
