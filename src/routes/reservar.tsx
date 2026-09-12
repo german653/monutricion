@@ -85,10 +85,10 @@ const schema = z.object({
     .string()
     .trim()
     .email("Correo inválido")
+    .max(255)
     .refine((val) => !val.endsWith(".con"), {
       message: "Verificá el correo (parece terminar en .con en vez de .com)",
-    })
-    .max(255),
+    }),
   phone: z.string().trim().min(6, "Teléfono inválido").max(30),
   service_id: z.string().min(1, "Elegí un servicio"),
   date: z.string().min(1, "Elegí una fecha"),
