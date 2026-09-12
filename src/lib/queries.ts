@@ -867,19 +867,21 @@ export interface AvailableSlotInfo {
 }
 
 export async function fetchAvailability(): Promise<AvailabilitySlot[]> {
-  const today = new Date().toISOString().slice(0, 10);
   try {
-    const q = query(
-      collection(db, "availability"),
-      where("date", ">=", today),
-      orderBy("date", "asc"),
-    );
-    const snap = await getDocs(q);
+    const snap = await getDocs(collection(db, "availability"));
     if (!snap.empty) {
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as AvailabilitySlot);
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as AvailabilitySlot);
+      list.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.time.localeCompare(b.time);
+      });
+      setStorage("availability", list);
+      return list;
     }
-  } catch {
-    // fall through
+    setStorage("availability", []);
+    return [];
+  } catch (err) {
+    console.warn("Could not load availability from Firestore, using local cache:", err);
   }
   return getStorage<AvailabilitySlot[]>("availability", []);
 }
@@ -898,19 +900,22 @@ export async function addAvailabilitySlots(
       id: slotId,
       date,
       time,
-      location_id: location?.id || undefined,
-      location_title: location?.title?.trim() || undefined,
-      location_address: location?.address?.trim() || undefined,
-      location_notes: location?.notes?.trim() || undefined,
-      location_maps_url: location?.google_maps_url?.trim() || undefined,
       created_at: new Date().toISOString(),
     };
+    if (location?.id) slotData.location_id = location.id;
+    if (location?.title?.trim()) slotData.location_title = location.title.trim();
+    if (location?.address?.trim()) slotData.location_address = location.address.trim();
+    if (location?.notes?.trim()) slotData.location_notes = location.notes.trim();
+    if (location?.google_maps_url?.trim())
+      slotData.location_maps_url = location.google_maps_url.trim();
+
     newSlots.push(slotData);
 
     try {
       await setDoc(doc(db, "availability", slotId), slotData, { merge: true });
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error(`Error saving slot ${slotId} to Firestore:`, err);
+      throw err;
     }
   }
 
@@ -944,19 +949,17 @@ export async function updateSlotsLocation(
 
   for (const slotId of slotIds) {
     try {
-      await setDoc(
-        doc(db, "availability", slotId),
-        {
-          location_id: location.id || undefined,
-          location_title: location.title?.trim() || undefined,
-          location_address: location.address?.trim() || undefined,
-          location_notes: location.notes?.trim() || undefined,
-          location_maps_url: location.google_maps_url?.trim() || undefined,
-        },
-        { merge: true },
-      );
-    } catch {
-      // ignore
+      const updateData: Record<string, unknown> = {};
+      if (location.id) updateData.location_id = location.id;
+      if (location.title !== undefined) updateData.location_title = location.title.trim();
+      if (location.address !== undefined) updateData.location_address = location.address.trim();
+      if (location.notes !== undefined) updateData.location_notes = location.notes.trim();
+      if (location.google_maps_url !== undefined)
+        updateData.location_maps_url = location.google_maps_url.trim();
+
+      await setDoc(doc(db, "availability", slotId), updateData, { merge: true });
+    } catch (err) {
+      console.error(`Error updating slot location for ${slotId}:`, err);
     }
   }
 }
@@ -964,8 +967,8 @@ export async function updateSlotsLocation(
 export async function deleteAvailabilitySlot(id: string) {
   try {
     await deleteDoc(doc(db, "availability", id));
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error(`Error deleting slot ${id} from Firestore:`, err);
   }
   const current = getStorage<AvailabilitySlot[]>("availability", []);
   setStorage(

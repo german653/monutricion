@@ -15,6 +15,8 @@ import {
   CalendarPlus,
   Clock,
   Calendar,
+  Mail,
+  RotateCw,
 } from "lucide-react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
@@ -79,7 +81,14 @@ export const Route = createFileRoute("/reservar")({
 const schema = z.object({
   first_name: z.string().trim().min(1, "Ingresá tu nombre").max(80),
   last_name: z.string().trim().min(1, "Ingresá tu apellido").max(80),
-  email: z.string().trim().email("Correo inválido").max(255),
+  email: z
+    .string()
+    .trim()
+    .email("Correo inválido")
+    .refine((val) => !val.endsWith(".con"), {
+      message: "Verificá el correo (parece terminar en .con en vez de .com)",
+    })
+    .max(255),
   phone: z.string().trim().min(6, "Teléfono inválido").max(30),
   service_id: z.string().min(1, "Elegí un servicio"),
   date: z.string().min(1, "Elegí una fecha"),
@@ -149,12 +158,29 @@ function BookingPage() {
 
   const [confirmedAppointment, setConfirmedAppointment] = useState<Appointment | null>(null);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState(7);
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [emailErrorMsg, setEmailErrorMsg] = useState<string | null>(null);
 
-  // Listen to Firestore changes in real-time so taken slots disappear immediately for all users
+  // Listen to Firestore changes in real-time so taken slots disappear and new schedules appear immediately
   useEffect(() => {
     let unsubSlots: (() => void) | undefined;
     let unsubApps: (() => void) | undefined;
+    let unsubAvail: (() => void) | undefined;
+
+    try {
+      unsubAvail = onSnapshot(
+        collection(db, "availability"),
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["available-slots"] });
+          queryClient.invalidateQueries({ queryKey: ["availability"] });
+        },
+        () => {
+          // gracefully ignore snapshot errors
+        },
+      );
+    } catch {
+      // ignore
+    }
 
     try {
       unsubSlots = onSnapshot(
@@ -185,6 +211,7 @@ function BookingPage() {
     }
 
     return () => {
+      if (unsubAvail) unsubAvail();
       if (unsubSlots) unsubSlots();
       if (unsubApps) unsubApps();
     };
@@ -241,22 +268,6 @@ function BookingPage() {
     }
   }, [slotsByDate, selectedDate, selectedTime, setValue]);
 
-  // Auto-redirect to home page after confirmation modal appears
-  useEffect(() => {
-    if (!showConfirmationModal) return;
-
-    if (redirectCountdown <= 0) {
-      navigate({ to: "/" });
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setRedirectCountdown((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [showConfirmationModal, redirectCountdown, navigate]);
-
   const onSubmit = async (values: FormValues) => {
     isSubmittingBookingRef.current = true;
     try {
@@ -279,15 +290,26 @@ function BookingPage() {
       bookingSucceededRef.current = true;
       await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
       setConfirmedAppointment(bookedApp);
-      setRedirectCountdown(7);
       setShowConfirmationModal(true);
       toast.success("¡Tu turno fue reservado con éxito!");
 
       // Enviar correo de confirmación automático mediante EmailJS
+      setEmailStatus("sending");
+      setEmailErrorMsg(null);
       const locationText = `${bookedApp.location_title || location?.title || "Gimnasio 653"} - ${bookedApp.location_address || location?.address || "Córdoba"}`;
-      sendBookingConfirmationEmail(bookedApp, locationText).catch((e) => {
-        console.warn("Fallo al enviar correo con EmailJS:", e);
-      });
+      sendBookingConfirmationEmail(bookedApp, locationText)
+        .then((res) => {
+          if (res.success) {
+            setEmailStatus("sent");
+          } else {
+            setEmailStatus("error");
+            setEmailErrorMsg(res.error || "No se pudo entregar");
+          }
+        })
+        .catch((e) => {
+          setEmailStatus("error");
+          setEmailErrorMsg(e?.message || "Error al conectar");
+        });
     } catch (err: unknown) {
       isSubmittingBookingRef.current = false;
       await queryClient.invalidateQueries({ queryKey: ["available-slots"] });
@@ -305,6 +327,29 @@ function BookingPage() {
       } else {
         toast.error("No pudimos registrar tu turno. Intentá nuevamente.");
       }
+    }
+  };
+
+  const handleRetryEmail = async () => {
+    if (!confirmedAppointment) return;
+    setEmailStatus("sending");
+    setEmailErrorMsg(null);
+    const locationText = `${confirmedAppointment.location_title || location?.title || "Gimnasio 653"} - ${confirmedAppointment.location_address || location?.address || "Córdoba"}`;
+    try {
+      const res = await sendBookingConfirmationEmail(confirmedAppointment, locationText);
+      if (res.success) {
+        setEmailStatus("sent");
+        toast.success(`Correo enviado a ${confirmedAppointment.email}`);
+      } else {
+        setEmailStatus("error");
+        setEmailErrorMsg(res.error || "No se pudo entregar");
+        toast.error(`EmailJS: ${res.error || "Error al enviar el correo"}`);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error desconocido";
+      setEmailStatus("error");
+      setEmailErrorMsg(msg);
+      toast.error(`Error: ${msg}`);
     }
   };
 
@@ -633,15 +678,54 @@ function BookingPage() {
             </div>
           )}
 
-          {/* Redirección automática al inicio */}
-          <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
-            <div className="flex items-center justify-between text-[0.75rem] text-muted-foreground">
-              <span>Redirigiendo a la página de inicio...</span>
-              <span className="inline-flex items-center justify-center h-5.5 px-2 rounded-full bg-primary/10 font-bold text-primary text-[0.75rem]">
-                {redirectCountdown}s
-              </span>
-            </div>
+          {/* Estado del correo de confirmación */}
+          {confirmedAppointment && (
+            <div className="pt-1">
+              {emailStatus === "sending" && (
+                <div className="flex items-center justify-center gap-2 rounded-2xl bg-muted/50 p-2.5 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                  <span>Enviando comprobante a {confirmedAppointment.email}...</span>
+                </div>
+              )}
 
+              {emailStatus === "sent" && (
+                <div className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 p-2.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>Comprobante enviado a {confirmedAppointment.email}</span>
+                </div>
+              )}
+
+              {emailStatus === "error" && (
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-left space-y-2">
+                  <div className="flex items-start gap-2">
+                    <Mail className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
+                        No se pudo despachar el correo automáticamente
+                      </p>
+                      <p className="text-[0.75rem] text-muted-foreground">
+                        Tu turno está <strong>100% confirmado y guardado</strong> en la agenda.
+                        Podés avisarle a Melina por WhatsApp o reintentar el envío del correo:
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full rounded-xl text-xs"
+                    onClick={handleRetryEmail}
+                  >
+                    <RotateCw className="mr-1.5 h-3.5 w-3.5" />
+                    Reintentar envío de correo
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Botones de navegación controlados por el usuario sin tiempo límite */}
+          <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
             <Button
               type="button"
               className="w-full rounded-2xl"
@@ -650,7 +734,19 @@ function BookingPage() {
                 navigate({ to: "/" });
               }}
             >
-              Ir a la página de inicio ahora
+              Volver a la página de inicio
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-2xl text-xs"
+              onClick={() => {
+                setShowConfirmationModal(false);
+                navigate({ to: "/mis-reservas" });
+              }}
+            >
+              Ver mis reservas
             </Button>
           </div>
         </DialogContent>

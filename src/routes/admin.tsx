@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import { toast } from "sonner";
 import {
   CalendarCheck,
@@ -10,6 +12,7 @@ import {
   Loader2,
   Trash2,
   MessageCircle,
+  Mail,
   CalendarClock,
   UtensilsCrossed,
   LayoutTemplate,
@@ -30,6 +33,7 @@ import { RecipeManager } from "@/components/admin/RecipeManager";
 import { ContentManager } from "@/components/admin/ContentManager";
 import { AvailabilityManager } from "@/components/admin/AvailabilityManager";
 import { FaqManager } from "@/components/admin/FaqManager";
+import { sendBookingConfirmationEmail } from "@/lib/email";
 import {
   fetchAppointments,
   fetchAllProducts,
@@ -67,6 +71,28 @@ function AdminPage() {
     queryFn: fetchAppointments,
     enabled,
   });
+
+  // Real-time synchronization of appointments so new bookings appear automatically
+  useEffect(() => {
+    if (!isAdmin) return;
+    let unsub: (() => void) | undefined;
+    try {
+      unsub = onSnapshot(
+        collection(db, "appointments"),
+        (snapshot) => {
+          const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Appointment);
+          list.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+          queryClient.setQueryData(["appointments"], list);
+        },
+        (err) => console.warn("Realtime appointments listener warning:", err),
+      );
+    } catch (e) {
+      console.warn("Could not start realtime appointments listener:", e);
+    }
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [isAdmin, queryClient]);
   const { data: products = [] } = useQuery({
     queryKey: ["all-products"],
     queryFn: fetchAllProducts,
@@ -184,6 +210,25 @@ function AdminPage() {
     }
   };
 
+  const handleResendEmail = async (a: Appointment) => {
+    setBusy(a.id);
+    const loc = `${a.location_title || "Gimnasio 653"} - ${a.location_address || "Córdoba"}`;
+    toast.info(`Enviando correo de confirmación a ${a.email}...`);
+    try {
+      const res = await sendBookingConfirmationEmail(a, loc);
+      if (res.success) {
+        toast.success(`¡Correo enviado con éxito a ${a.email}!`);
+      } else {
+        toast.error(`EmailJS: ${res.error || "No se pudo enviar el correo"}`);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error desconocido";
+      toast.error(`Error al enviar: ${msg}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const logout = async () => {
     localStorage.removeItem("admin_authenticated");
     window.dispatchEvent(new Event("admin-auth-change"));
@@ -289,12 +334,24 @@ function AdminPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-full text-muted-foreground hover:text-primary"
+                          onClick={() => handleResendEmail(a)}
+                          disabled={busy === a.id}
+                          aria-label="Reenviar correo de confirmación"
+                          title="Reenviar correo de confirmación al cliente"
+                        >
+                          <Mail className="h-4 w-4" />
+                        </Button>
                         <a href={waLink(a.phone)} target="_blank" rel="noopener noreferrer">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="rounded-full text-muted-foreground hover:text-success"
                             aria-label="Contactar por WhatsApp"
+                            title="Abrir chat en WhatsApp"
                           >
                             <MessageCircle className="h-4 w-4" />
                           </Button>

@@ -41,7 +41,14 @@ const firestoreDbId =
 function createFirestore() {
   const targetDb = firestoreDbId && firestoreDbId !== "(default)" ? firestoreDbId : undefined;
   try {
-    return initializeFirestore(app, { experimentalForceLongPolling: true }, targetDb);
+    return initializeFirestore(
+      app,
+      {
+        experimentalForceLongPolling: true,
+        ignoreUndefinedProperties: true,
+      },
+      targetDb,
+    );
   } catch {
     return targetDb ? getFirestore(app, targetDb) : getFirestore(app);
   }

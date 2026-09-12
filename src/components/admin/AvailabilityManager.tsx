@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import { toast } from "sonner";
 import {
   Trash2,
@@ -64,6 +66,34 @@ export function AvailabilityManager() {
     queryKey: ["consultation-locations"],
     queryFn: fetchConsultationLocations,
   });
+
+  // Real-time synchronization across devices (e.g. phone <-> computer)
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    try {
+      unsub = onSnapshot(
+        collection(db, "availability"),
+        (snapshot) => {
+          const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as AvailabilitySlot);
+          list.sort((a, b) => {
+            if (a.date !== b.date) return a.date.localeCompare(b.date);
+            return a.time.localeCompare(b.time);
+          });
+          queryClient.setQueryData(["availability"], list);
+          queryClient.invalidateQueries({ queryKey: ["available-slots"] });
+        },
+        (err) => {
+          console.warn("Realtime availability listener warning:", err);
+        },
+      );
+    } catch (e) {
+      console.warn("Could not start realtime listener in AvailabilityManager:", e);
+    }
+
+    return () => {
+      if (unsub) unsub();
+    };
+  }, [queryClient]);
 
   const today = new Date().toISOString().slice(0, 10);
 
